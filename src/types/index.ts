@@ -3,8 +3,8 @@ export interface Usuario {
   alias: string;
   nombre: string;
   apellido: string;
-  rol: string | null;
-  id_rol: number | null;
+  roles: string[];
+  id_roles: number[];
 }
 
 export interface AuthResponse {
