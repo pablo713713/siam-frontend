@@ -15,32 +15,53 @@ export interface AuthResponse {
 export interface Rol {
   id: number;
   nombre: string;
-  descripcion: string;
+  descripcion: string | null;
   activo: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface PerfilCliente {
-  cod_cli: number;
-  razon_social: string;
-  num_ci_nit: string;
-  telefono: string;
-  celular: string;
-  domicilio: string;
-  activo: boolean;
-  extension: {
-    acepta_devoluciones: boolean;
-    limite_credito: number | null;
-    nivel_fidelidad: number;
-    observaciones: string | null;
-  };
+export interface UsuarioRolResponse {
+  id: number;
+  cod_usu: string;
+  id_rol: number;
+  asignadoAt: string;
+  rol: Rol;
 }
 
-export interface GananciaNeta {
-  rango: { fecha_inicio: string; fecha_fin: string };
-  ingresos_brutos: number;
-  costo_mercancia: number;
-  ganancia_neta: number;
-  margen_porcentaje: number;
+export interface CreateRolDto {
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface UpdateRolDto {
+  nombre?: string;
+  descripcion?: string;
+}
+
+export interface AsignarRolDto {
+  cod_usu: string;
+  id_rol: number;
+}
+
+export interface Producto {
+  id: number;
+  codPro: string | null;
+  descPro: string;
+  estado: string | null;
+  codigo: string | null;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdvancedSearchParams {
+  q?: string;
+  codigo?: string;
+  page?: number;
+  limit?: number;
 }
