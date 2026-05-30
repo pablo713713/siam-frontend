@@ -16,6 +16,8 @@ const NAV: NavItem[] = [
   { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol'  },
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'     },
+  { section: 'Clientes' },
+  { icon: 'ti-user-circle',      label: 'Perfil de Cliente', to: '/clientes'     },
 ];
 
 export function Sidebar() {
@@ -32,10 +34,9 @@ export function Sidebar() {
       width: 220, background: BRAND.sidebar,
       display: 'flex', flexDirection: 'column', flexShrink: 0,
     }}>
-      {}
+      {/* Logo */}
       <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${BRAND.sidebarLine}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {}
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end' }}>
             {[28, 22, 16].map((h, i) => (
               <div key={i} style={{ width: 4, height: h, background: BRAND.red }} />
@@ -63,7 +64,10 @@ export function Sidebar() {
               </div>
             );
           }
-          const active = pathname === item.to;
+          const active =
+            pathname === item.to ||
+            (item.to !== '/dashboard' && pathname.startsWith(item.to ?? '__none__'));
+
           return (
             <div
               key={i}
@@ -102,7 +106,7 @@ export function Sidebar() {
             }}>
               {usuario?.nombre} {usuario?.apellido}
             </div>
-            <div style={{ color: '#666', fontSize: 10 }}>{usuario?.rol ?? 'Sin rol'}</div>
+            <div style={{ color: '#666', fontSize: 10 }}>{(usuario as any)?.rol ?? 'Sin rol'}</div>
           </div>
           <i
             className="ti ti-logout"

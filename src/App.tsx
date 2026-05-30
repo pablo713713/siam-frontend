@@ -2,11 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute } from './routes/PrivateRoute';
 import { MainLayout } from './components/layout/MainLayout';
-import { Login }      from './pages/Login';
-import { Dashboard }  from './pages/Dashboard';
-import { Roles }      from './pages/Roles';
-import { AsignarRol } from './pages/AsignarRol';
-import { Busqueda }   from './pages/Busqueda';
+import { Login }           from './pages/Login';
+import { Dashboard }       from './pages/Dashboard';
+import { Roles }           from './pages/Roles';
+import { AsignarRol }      from './pages/AsignarRol';
+import { Busqueda }        from './pages/Busqueda';
+import { DetalleProducto } from './pages/DetalleProducto';
+import { PerfilCliente }   from './pages/PerfilCliente';
 
 export default function App() {
   return (
@@ -46,6 +48,26 @@ export default function App() {
             element={
               <PrivateRoute>
                 <MainLayout><Busqueda /></MainLayout>
+              </PrivateRoute>
+            }
+          />
+
+          {}
+          <Route
+            path="/productos/:id"
+            element={
+              <PrivateRoute>
+                <MainLayout><DetalleProducto /></MainLayout>
+              </PrivateRoute>
+            }
+          />
+
+          {}
+          <Route
+            path="/clientes"
+            element={
+              <PrivateRoute>
+                <MainLayout><PerfilCliente /></MainLayout>
               </PrivateRoute>
             }
           />

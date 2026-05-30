@@ -65,3 +65,82 @@ export interface AdvancedSearchParams {
   page?: number;
   limit?: number;
 }
+
+export interface StockSucursal {
+  codSucursal: string;
+  nombreSucursal: string;
+  stockFisico: number;
+  inventarioVirtual: number;
+}
+
+export type TipoOperacion = 'INGRESO' | 'SALIDA';
+export type OrigenMovimiento =
+  | 'IMPORTACION'
+  | 'INVENTARIO'
+  | 'VENTA'
+  | 'CREDITO'
+  | 'PEDIDO';
+
+export interface MovimientoKardex {
+  fecha: string;
+  tipoOperacion: TipoOperacion;
+  origen: OrigenMovimiento;
+  cantidad: number;
+  referencia: string;
+  saldoAcumulado: number;
+}
+
+export interface KardexResponse {
+  stockPorSucursal: StockSucursal[];
+  totalStockFisico: number;
+  totalInventarioVirtual: number;
+  movimientos: MovimientoKardex[];
+}
+
+export interface ClienteExtension {
+  acepta_devoluciones: boolean;
+  limite_credito: number | null;
+  nivel_fidelidad: number;
+  observaciones: string | null;
+}
+
+export interface ClientePerfil {
+  cod_cli: number;
+  razon_social: string;
+  num_ci_nit: string;
+  telefono: string | null;
+  celular: string | null;
+  domicilio: string | null;
+  activo: boolean;
+  extension: ClienteExtension;
+}
+
+export interface CompraHistorial {
+  id: string;
+  tipo: 'CONTADO' | 'CREDITO';
+  fecha: string;
+  monto: number;
+  estado: string;
+}
+
+export interface HistorialComprasResponse {
+  cod_cli: number;
+  razon_social: string;
+  total_compras: number;
+  historial: CompraHistorial[];
+}
+
+export interface IngresosResponse {
+  rango: { fecha_inicio: string; fecha_fin: string };
+  ventas_contado: { total: number; cantidad: number };
+  ventas_credito: { total: number; cantidad: number };
+  total_bruto: number;
+}
+
+export interface GananciaResponse {
+  rango: { fecha_inicio: string; fecha_fin: string };
+  ingresos_brutos: number;
+  costo_mercancia: number;
+  ganancia_neta: number;
+  margen_porcentaje: number;
+}

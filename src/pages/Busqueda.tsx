@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { Producto, AdvancedSearchParams } from '../types';
 
 interface BusquedaProps {
-  /** Viene del Topbar a través de MainLayout */
   quickSearch?: string;
   setQuickSearch?: (q: string) => void;
 }
@@ -12,6 +12,8 @@ interface BusquedaProps {
 const LIMIT = 20;
 
 export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
+  const navigate = useNavigate();
+
   const [q, setQ]             = useState(quickSearch);
   const [codigo, setCodigo]   = useState('');
   const [results, setResults] = useState<Producto[]>([]);
@@ -20,7 +22,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Si llega una búsqueda rápida desde el Topbar, pre-rellena el campo
   useEffect(() => {
     if (quickSearch) setQ(quickSearch);
   }, [quickSearch]);
@@ -34,7 +35,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
 
     try {
       const { data } = await api.get('/productos/search/advanced', { params });
-      // El backend puede devolver array directo o { data, total }
       if (Array.isArray(data)) {
         setResults(data);
         setTotal(data.length);
@@ -61,11 +61,18 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
     setQuickSearch?.('');
   };
 
+  const verDetalle = (p: Producto) => {
+    const qs = new URLSearchParams();
+    if (p.descPro) qs.set('nombre', p.descPro);
+    if (p.codPro)  qs.set('cod', p.codPro);
+    navigate(`/productos/${p.id}?${qs.toString()}`);
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
     <div>
-      {/* ── HU-F3.02: Formulario de filtros ── */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Búsqueda avanzada de productos</div>
 
@@ -106,7 +113,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
         </div>
       </div>
 
-      {/* ── HU-F3.03: Tabla de resultados ── */}
+      {}
       {searched && (
         <div style={S.card}>
           <div style={{
@@ -143,6 +150,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                       <th style={S.th}>Cód. Producto</th>
                       <th style={S.th}>Cód. Fábrica</th>
                       <th style={S.th}>Estado</th>
+                      <th style={S.th}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -162,13 +170,43 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                             {p.estado === 'A' ? 'Activo' : p.estado ?? '—'}
                           </span>
                         </td>
+                        <td style={S.td}>
+                          <button
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              padding: '5px 12px',
+                              borderRadius: 6,
+                              border: `1px solid ${BRAND.gray200}`,
+                              background: BRAND.white,
+                              color: BRAND.black,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              fontFamily: 'inherit',
+                              transition: 'all 0.15s',
+                            }}
+                            onClick={() => verDetalle(p)}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
+                              (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.gray200;
+                              (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
+                            }}
+                          >
+                            <i className="ti ti-eye" style={{ fontSize: 13 }} />
+                            Ver detalle
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* ── Paginación ── */}
               {totalPages > 1 && (
                 <Pagination page={page} totalPages={totalPages} total={total} onPage={search} />
               )}
@@ -180,7 +218,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   );
 }
 
-// ── Componente de paginación ──────────────────────────────────────────────────
 interface PaginationProps {
   page: number;
   totalPages: number;
