@@ -183,7 +183,7 @@ function PresetBtn({
         fontSize: 13,
         fontWeight: active ? 700 : 500,
         background: active ? '#ffeaea' : BRAND.white,
-        color: active ? BRAND.red : BRAND.black,
+        color: active ? BRAND.redDark : BRAND.black,  // #B31F1F on #ffeaea = 5.81:1 ✅
         transition: 'all 0.15s',
         fontFamily: 'inherit',
       }}
@@ -232,6 +232,7 @@ export function Dashboard() {
   const [ingresos, setIngresos] = useState<IngresosResponse | null>(null);
   const [ganancia, setGanancia] = useState<GananciaResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [kpiError, setKpiError] = useState<string | null>(null);
 
   const rango = rangoDesdePreset(preset, customRango);
 
@@ -239,6 +240,7 @@ export function Dashboard() {
     setLoading(true);
     setIngresos(null);
     setGanancia(null);
+    setKpiError(null);
     try {
       const params = {
         fecha_inicio: rango.fecha_inicio,
@@ -250,7 +252,16 @@ export function Dashboard() {
       ]);
       setIngresos(ing);
       setGanancia(gan);
-    } catch {
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 500) {
+        setKpiError('Error interno del servidor al generar los reportes. Contacta al administrador si el problema persiste.');
+      } else if (status === 502 || status === 503 || status === 504) {
+        setKpiError('El servidor de reportes no está disponible en este momento. Intenta nuevamente en unos minutos.');
+      } else {
+        setKpiError('No se pudieron cargar los datos. Verifica tu conexión e intenta nuevamente.');
+      }
+      console.error('[Dashboard] Error al cargar KPIs:', err);
     } finally {
       setLoading(false);
     }
@@ -268,6 +279,25 @@ export function Dashboard() {
 
   return (
     <div>
+      {/* Error banner */}
+      {kpiError && (
+        <div role="alert" style={{
+          marginBottom: 16,
+          padding: '12px 16px',
+          background: '#fff3f3',
+          border: `1px solid ${BRAND.red}`,
+          borderRadius: 8,
+          color: BRAND.red,
+          fontSize: 13,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <i className="ti ti-alert-circle" aria-hidden="true" style={{ fontSize: 16, flexShrink: 0 }} />
+          {kpiError}
+        </div>
+      )}
+
       {/* Saludo */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>
@@ -323,7 +353,7 @@ export function Dashboard() {
               fontSize: 13,
               fontWeight: preset === 'custom' ? 700 : 500,
               background: preset === 'custom' ? '#ffeaea' : BRAND.white,
-              color: preset === 'custom' ? BRAND.red : BRAND.black,
+              color: preset === 'custom' ? BRAND.redDark : BRAND.black,  // #B31F1F on #ffeaea = 5.81:1 ✅
               transition: 'all 0.15s',
               fontFamily: 'inherit',
             }}
