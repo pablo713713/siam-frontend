@@ -44,7 +44,7 @@ export function Sidebar() {
           </div>
           <div>
             <div style={{ color: BRAND.white, fontWeight: 800, fontSize: 18, letterSpacing: 2 }}>SIAM</div>
-            <div style={{ color: '#555', fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            <div style={{ color: BRAND.sidebarMuted, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase' }}>
               Maximport
             </div>
           </div>
@@ -57,7 +57,7 @@ export function Sidebar() {
           if (item.section) {
             return (
               <div key={i} style={{
-                padding: '8px 16px 4px', color: '#555',
+                padding: '8px 16px 4px', color: BRAND.sidebarMuted,
                 fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', fontWeight: 600,
               }}>
                 {item.section}
@@ -106,14 +106,20 @@ export function Sidebar() {
             }}>
               {usuario?.nombre} {usuario?.apellido}
             </div>
-            <div style={{ color: '#666', fontSize: 10 }}>{(usuario as any)?.rol ?? 'Sin rol'}</div>
+            <div style={{ color: BRAND.sidebarSubtext, fontSize: 10 }}>{(usuario as any)?.rol ?? 'Sin rol'}</div>
           </div>
-          <i
-            className="ti ti-logout"
-            style={{ color: '#555', fontSize: 16, cursor: 'pointer' }}
+          <button
             onClick={() => { logout(); navigate('/login'); }}
             aria-label="Cerrar sesión"
-          />
+            title="Cerrar sesión"
+            style={{
+              background: 'none', border: 'none', padding: 4,
+              cursor: 'pointer', display: 'flex', alignItems: 'center',
+              color: BRAND.sidebarMuted, borderRadius: 4,
+            }}
+          >
+            <i className="ti ti-logout" aria-hidden="true" style={{ fontSize: 16 }} />
+          </button>
         </div>
       </div>
     </aside>

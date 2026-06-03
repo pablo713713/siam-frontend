@@ -1,6 +1,8 @@
 export const BRAND = {
   red:          '#D72626',
   redDark:      '#B31F1F',
+  // Danger/badge red darkened to pass AA on #ffeaea background (was #D72626 → 4.34:1, now 5.81:1)
+  redBadge:     '#B31F1F',
   black:        '#111111',
   white:        '#FFFFFF',
   gray50:       '#F6F6F6',
@@ -10,6 +12,8 @@ export const BRAND = {
   gray600:      '#666666',
   sidebar:      '#141414',
   sidebarLine:  '#2A2A2A',
+  sidebarMuted:    '#888888', 
+  sidebarSubtext:  '#888888', 
 } as const;
 
 export const S = {
@@ -109,14 +113,14 @@ export function btnStyle(variant: BtnVariant = 'secondary'): React.CSSProperties
     fontFamily: 'inherit',
   };
   if (variant === 'primary')   return { ...base, background: BRAND.red,    color: BRAND.white };
-  if (variant === 'danger')    return { ...base, background: '#ffeaea',     color: BRAND.red   };
+  if (variant === 'danger')    return { ...base, background: '#ffeaea',     color: '#B31F1F'   };  // 5.81:1 ✅
   return                              { ...base, background: BRAND.gray100, color: BRAND.black };
 }
 
 export function badgeStyle(color: 'green' | 'red' | 'gray' = 'gray'): React.CSSProperties {
   const map = {
     green: { bg: '#e6f9ee', text: '#1a7a40' },
-    red:   { bg: '#ffeaea', text: BRAND.red  },
+    red:   { bg: '#ffeaea', text: '#B31F1F'  },  // #B31F1F on #ffeaea = 5.81:1 ✅
     gray:  { bg: '#f0f0f0', text: '#555'     },
   };
   const { bg, text } = map[color];
