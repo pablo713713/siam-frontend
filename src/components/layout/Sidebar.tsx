@@ -7,17 +7,20 @@ interface NavItem {
   label?: string;
   to?: string;
   section?: string;
+  requiredRole?: string;
 }
 
 const NAV: NavItem[] = [
-  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard'    },
-  { section: 'Administración' },
-  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles'        },
-  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol'  },
+  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',   requiredRole: 'Administrador' },
+  { section: 'Administración',                                                    requiredRole: 'Administrador' },
+  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',       requiredRole: 'Administrador' },
+  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol', requiredRole: 'Administrador' },
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'     },
   { section: 'Clientes' },
   { icon: 'ti-user-circle',      label: 'Perfil de Cliente', to: '/clientes'     },
+  { section: 'Ventas' },
+  { icon: 'ti-shopping-cart', label: 'Nueva Venta', to: '/ventas/nueva', requiredRole: 'Vendedor' },
 ];
 
 export function Sidebar() {
@@ -28,6 +31,11 @@ export function Sidebar() {
   const initials = usuario
     ? `${usuario.nombre?.[0] ?? ''}${usuario.apellido?.[0] ?? ''}`.toUpperCase()
     : '?';
+
+  const navFiltrado = NAV.filter((item) => {
+    if (!item.requiredRole) return true;
+    return usuario?.roles?.includes(item.requiredRole) ?? false;
+  });
 
   return (
     <aside style={{
@@ -51,9 +59,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {}
+      {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
-        {NAV.map((item, i) => {
+        {navFiltrado.map((item, i) => {
           if (item.section) {
             return (
               <div key={i} style={{
@@ -89,7 +97,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {}
+      {/* Usuario */}
       <div style={{ padding: '16px 20px', borderTop: `1px solid ${BRAND.sidebarLine}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
@@ -106,7 +114,9 @@ export function Sidebar() {
             }}>
               {usuario?.nombre} {usuario?.apellido}
             </div>
-            <div style={{ color: BRAND.sidebarSubtext, fontSize: 10 }}>{(usuario as any)?.rol ?? 'Sin rol'}</div>
+            <div style={{ fontSize: 10, color: BRAND.sidebarSubtext }}>
+              {usuario?.roles?.join(', ') ?? 'Sin rol'}
+            </div>
           </div>
           <button
             onClick={() => { logout(); navigate('/login'); }}

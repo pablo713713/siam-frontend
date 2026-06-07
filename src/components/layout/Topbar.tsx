@@ -17,7 +17,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ onQuickSearch }: TopbarProps) {
-  const { usuario } = useAuth();
+  const { usuario,logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -149,6 +149,27 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
         <span style={{ fontSize: 13, fontWeight: 600, color: BRAND.black }}>
           {usuario?.alias}
         </span>
+        <button
+          onClick={() => { logout(); navigate('/login'); }}
+          title="Cerrar sesión"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 32, height: 32, borderRadius: 6,
+            border: `1px solid ${BRAND.black}`,
+            background: 'transparent', cursor: 'pointer',
+            color: BRAND.black, transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
+            (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.black;
+            (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
+          }}
+        >
+          <i className="ti ti-logout" style={{ fontSize: 16 }} aria-hidden="true" />
+        </button>
       </div>
     </header>
   );

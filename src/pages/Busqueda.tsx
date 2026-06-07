@@ -9,7 +9,7 @@ interface BusquedaProps {
   setQuickSearch?: (q: string) => void;
 }
 
-const LIMIT = 20;
+const LIMIT = 200;
 
 export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const navigate = useNavigate();
@@ -147,8 +147,11 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                     <tr>
                       <th style={S.th}>ID</th>
                       <th style={S.th}>Descripción</th>
+                      <th style={S.th}>Marca</th>
+                      <th style={S.th}>Modelo</th>
                       <th style={S.th}>Cód. Producto</th>
                       <th style={S.th}>Cód. Fábrica</th>
+                      <th style={S.th}>Cód. Barras</th>
                       <th style={S.th}>Estado</th>
                       <th style={S.th}></th>
                     </tr>
@@ -163,8 +166,11 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                       >
                         <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{p.id}</td>
                         <td style={{ ...S.td, fontWeight: 600, maxWidth: 320 }}>{p.descPro}</td>
+                        <td style={S.td}>{p.marca ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
+                        <td style={S.td}>{p.modelo ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
                         <td style={S.td}>{p.codPro ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
-                        <td style={S.td}>{p.codigo ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
+                        <td style={S.td}>{p.codFab ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
+                        <td style={S.td}>{p.barra ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
                         <td style={S.td}>
                           <span style={badgeStyle(p.estado === 'A' ? 'green' : 'red')}>
                             {p.estado === 'A' ? 'Activo' : p.estado ?? '—'}
@@ -210,8 +216,23 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
               {totalPages > 1 && (
                 <Pagination page={page} totalPages={totalPages} total={total} onPage={search} />
               )}
+
+              {results.length === LIMIT && (
+                <div style={{ textAlign: 'center', marginTop: 12 }}>
+                  <button
+                    style={btnStyle()}
+                    onClick={() => search(page + 1)}
+                    disabled={loading}
+                  >
+                    <i className="ti ti-plus" aria-hidden="true" />
+                    Cargar más resultados
+                  </button>
+                </div>
+              )}
             </>
-          )}
+          )
+          
+          }
         </div>
       )}
     </div>

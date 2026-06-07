@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute } from './routes/PrivateRoute';
-import { MainLayout } from './components/layout/MainLayout';
+import { MainLayout }      from './components/layout/MainLayout';
 import { Login }           from './pages/Login';
 import { Dashboard }       from './pages/Dashboard';
 import { Roles }           from './pages/Roles';
@@ -9,40 +9,51 @@ import { AsignarRol }      from './pages/AsignarRol';
 import { Busqueda }        from './pages/Busqueda';
 import { DetalleProducto } from './pages/DetalleProducto';
 import { PerfilCliente }   from './pages/PerfilCliente';
+import { useAuth } from './context/AuthContext';
+import { NuevaVenta } from './pages/NuevaVenta';
+
+
+function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
+  const { usuario, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!usuario?.roles?.includes(role)) return <Navigate to="/busqueda" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {}
           <Route path="/login" element={<Login />} />
 
-          {}
+          {/* Rutas solo Administrador */}
           <Route
             path="/dashboard"
             element={
-              <PrivateRoute>
+              <RoleRoute role="Administrador">
                 <MainLayout><Dashboard /></MainLayout>
-              </PrivateRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/roles"
             element={
-              <PrivateRoute>
+              <RoleRoute role="Administrador">
                 <MainLayout><Roles /></MainLayout>
-              </PrivateRoute>
+              </RoleRoute>
             }
           />
           <Route
             path="/asignar-rol"
             element={
-              <PrivateRoute>
+              <RoleRoute role="Administrador">
                 <MainLayout><AsignarRol /></MainLayout>
-              </PrivateRoute>
+              </RoleRoute>
             }
           />
+
+          {/* Rutas para todos los autenticados */}
           <Route
             path="/busqueda"
             element={
@@ -51,8 +62,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {}
           <Route
             path="/productos/:id"
             element={
@@ -61,8 +70,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-
-          {}
           <Route
             path="/clientes"
             element={
@@ -72,10 +79,28 @@ export default function App() {
             }
           />
 
-          {}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Redirect por defecto según rol */}
+          <Route path="*" element={<DefaultRedirect />} />
+
+          <Route
+            path="/ventas/nueva"
+            element={
+              <PrivateRoute>
+                <MainLayout><NuevaVenta /></MainLayout>
+              </PrivateRoute>
+            }
+          />
+
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
+}
+
+function DefaultRedirect() {
+  const { usuario, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (usuario?.roles?.includes('Administrador')) return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/busqueda" replace />;
 }
