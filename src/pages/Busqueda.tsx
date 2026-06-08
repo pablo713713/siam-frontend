@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { Producto, AdvancedSearchParams } from '../types';
@@ -9,18 +8,36 @@ interface BusquedaProps {
   setQuickSearch?: (q: string) => void;
 }
 
+interface ResumenProducto {
+  detalle: {
+    codSiam: string;
+    codFabrica: string;
+    descripcion: string;
+    marca: string;
+  } | null;
+  stockPorAlmacen: {
+    codSuc: string;
+    nomSuc: string;
+    cantidad: number;
+    diasSinMovimiento: number | null;
+  }[];
+}
+
 const LIMIT = 200;
 
 export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
-  const navigate = useNavigate();
-
-  const [q, setQ]             = useState(quickSearch);
-  const [codigo, setCodigo]   = useState('');
-  const [results, setResults] = useState<Producto[]>([]);
-  const [total, setTotal]     = useState(0);
-  const [page, setPage]       = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [q, setQ]               = useState(quickSearch);
+  const [codigo, setCodigo]     = useState('');
+  const [results, setResults]   = useState<Producto[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [page, setPage]         = useState(1);
+  const [loading, setLoading]   = useState(false);
   const [searched, setSearched] = useState(false);
+
+  // Panel flotante
+  const [productoSel, setProductoSel]     = useState<Producto | null>(null);
+  const [resumen, setResumen]             = useState<ResumenProducto | null>(null);
+  const [loadingResumen, setLoadingResumen] = useState(false);
 
   useEffect(() => {
     if (quickSearch) setQ(quickSearch);
@@ -58,27 +75,39 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
     setTotal(0);
     setSearched(false);
     setPage(1);
+    setProductoSel(null);
+    setResumen(null);
     setQuickSearch?.('');
   };
 
-  const verDetalle = (p: Producto) => {
-    const qs = new URLSearchParams();
-    if (p.descPro) qs.set('nombre', p.descPro);
-    if (p.codPro)  qs.set('cod', p.codPro);
-    navigate(`/productos/${p.id}?${qs.toString()}`);
+  const seleccionarProducto = async (p: Producto) => {
+    setProductoSel(p);
+    setLoadingResumen(true);
+    setResumen(null);
+    try {
+      const { data } = await api.get(`/productos/${p.id}/resumen`);
+      setResumen(data);
+    } catch {
+      setResumen(null);
+    } finally {
+      setLoadingResumen(false);
+    }
+  };
+
+  const cerrarPanel = () => {
+    setProductoSel(null);
+    setResumen(null);
   };
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div>
-      {}
+    <div style={{ paddingBottom: productoSel ? 320 : 0, transition: 'padding-bottom 0.3s' }}>
+
+      {/* Formulario de búsqueda */}
       <div style={S.card}>
         <div style={S.cardTitle}>Búsqueda avanzada de productos</div>
-
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14,
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
             <label style={S.label}>Nombre / descripción</label>
             <input
@@ -100,7 +129,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             />
           </div>
         </div>
-
         <div style={{ display: 'flex', gap: 10 }}>
           <button style={btnStyle('primary')} onClick={() => search(1)} disabled={loading}>
             <i className="ti ti-search" aria-hidden="true" />
@@ -113,13 +141,10 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
         </div>
       </div>
 
-      {}
+      {/* Resultados */}
       {searched && (
         <div style={S.card}>
-          <div style={{
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'space-between', marginBottom: 16,
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={S.cardTitle}>Resultados</div>
             {!loading && (
               <span style={badgeStyle('gray')}>
@@ -160,9 +185,14 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                     {results.map((p) => (
                       <tr
                         key={p.id}
+                        onClick={() => seleccionarProducto(p)}
                         onMouseEnter={(e) => (e.currentTarget.style.background = BRAND.gray50)}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                        style={{ transition: 'background 0.1s' }}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = productoSel?.id === p.id ? '#ffeaea' : 'transparent')}
+                        style={{
+                          transition: 'background 0.1s',
+                          cursor: 'pointer',
+                          background: productoSel?.id === p.id ? '#ffeaea' : 'transparent',
+                        }}
                       >
                         <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{p.id}</td>
                         <td style={{ ...S.td, fontWeight: 600, maxWidth: 320 }}>{p.descPro}</td>
@@ -176,24 +206,16 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                             {p.estado === 'A' ? 'Activo' : p.estado ?? '—'}
                           </span>
                         </td>
-                        <td style={S.td}>
+                        <td style={S.td} onClick={(e) => e.stopPropagation()}>
                           <button
                             style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '5px 12px',
-                              borderRadius: 6,
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              padding: '5px 12px', borderRadius: 6,
                               border: `1px solid ${BRAND.gray200}`,
-                              background: BRAND.white,
-                              color: BRAND.black,
-                              cursor: 'pointer',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              fontFamily: 'inherit',
-                              transition: 'all 0.15s',
+                              background: BRAND.white, color: BRAND.black,
+                              cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                              fontFamily: 'inherit', transition: 'all 0.15s',
                             }}
-                            onClick={() => verDetalle(p)}
                             onMouseEnter={(e) => {
                               (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
                               (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
@@ -203,8 +225,8 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                               (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
                             }}
                           >
-                            <i className="ti ti-eye" style={{ fontSize: 13 }} />
-                            Ver detalle
+                            <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
+                            Agregar al carrito
                           </button>
                         </td>
                       </tr>
@@ -219,20 +241,115 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
 
               {results.length === LIMIT && (
                 <div style={{ textAlign: 'center', marginTop: 12 }}>
-                  <button
-                    style={btnStyle()}
-                    onClick={() => search(page + 1)}
-                    disabled={loading}
-                  >
+                  <button style={btnStyle()} onClick={() => search(page + 1)} disabled={loading}>
                     <i className="ti ti-plus" aria-hidden="true" />
                     Cargar más resultados
                   </button>
                 </div>
               )}
             </>
-          )
-          
-          }
+          )}
+        </div>
+      )}
+
+      {/* Panel flotante inferior */}
+      {productoSel && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 220, right: 0,
+          background: BRAND.white, borderTop: `2px solid ${BRAND.red}`,
+          boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+          zIndex: 500, height: 300,
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* Header del panel */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 20px', borderBottom: `1px solid ${BRAND.gray200}`,
+            background: BRAND.gray50, flexShrink: 0,
+          }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: BRAND.black }}>
+              {productoSel.descPro}
+            </span>
+            <button
+              onClick={cerrarPanel}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: BRAND.gray600, fontSize: 18, padding: 4, lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Contenido en dos columnas */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
+
+            {/* Izquierda — Stock por almacén */}
+            <div style={{ padding: '12px 20px', borderRight: `1px solid ${BRAND.gray200}`, overflowY: 'auto' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+                Stock por almacén
+              </div>
+              {loadingResumen ? (
+                <div style={{ fontSize: 12, color: BRAND.gray600 }}>Cargando…</div>
+              ) : (
+                <table style={{ ...S.table, fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...S.th, fontSize: 11, padding: '6px 8px' }}>Sucursal</th>
+                      <th style={{ ...S.th, fontSize: 11, padding: '6px 8px', textAlign: 'center' }}>Cant.</th>
+                      <th style={{ ...S.th, fontSize: 11, padding: '6px 8px', textAlign: 'center' }}>Días sin mov.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resumen?.stockPorAlmacen.map((s) => (
+                      <tr key={s.codSuc}>
+                        <td style={{ ...S.td, padding: '6px 8px', fontSize: 12 }}>{s.nomSuc}</td>
+                        <td style={{
+                          ...S.td, padding: '6px 8px', textAlign: 'center', fontWeight: 700,
+                          color: s.cantidad > 0 ? '#1a7a40' : BRAND.gray400,
+                        }}>
+                          {s.cantidad}
+                        </td>
+                        <td style={{ ...S.td, padding: '6px 8px', textAlign: 'center', color: BRAND.gray600 }}>
+                          {s.diasSinMovimiento !== null ? s.diasSinMovimiento : <span style={{ color: BRAND.gray400 }}>—</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Derecha — Detalle del producto */}
+            <div style={{ padding: '12px 20px', overflowY: 'auto' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
+                Detalle del producto
+              </div>
+              {loadingResumen ? (
+                <div style={{ fontSize: 12, color: BRAND.gray600 }}>Cargando…</div>
+              ) : resumen?.detalle ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { label: 'COD. SIAM',    value: resumen.detalle.codSiam },
+                    { label: 'COD. FÁBRICA', value: resumen.detalle.codFabrica },
+                    { label: 'DESCRIPCIÓN',  value: resumen.detalle.descripcion },
+                    { label: 'MARCA',        value: resumen.detalle.marca },
+                  ].map(({ label, value }) => (
+                    <div key={label}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: BRAND.gray400, letterSpacing: 0.8, textTransform: 'uppercase' }}>
+                        {label}
+                      </div>
+                      <div style={{ fontSize: 13, color: BRAND.black, fontWeight: 500, marginTop: 2 }}>
+                        {value ?? <span style={{ color: BRAND.gray400 }}>—</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: BRAND.gray400 }}>Sin datos</div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -270,17 +387,14 @@ function Pagination({ page, totalPages, total, onPage }: PaginationProps) {
       <button style={btnBase} onClick={() => onPage(page - 1)} disabled={page === 1}>
         <i className="ti ti-chevron-left" style={{ fontSize: 14 }} aria-hidden="true" />
       </button>
-
       {pages.map((p, i) =>
         p === '…'
           ? <span key={i} style={{ padding: '0 4px', color: BRAND.gray400 }}>…</span>
           : <button key={i} style={p === page ? btnActive : btnBase} onClick={() => onPage(p as number)}>{p}</button>
       )}
-
       <button style={btnBase} onClick={() => onPage(page + 1)} disabled={page === totalPages}>
         <i className="ti ti-chevron-right" style={{ fontSize: 14 }} aria-hidden="true" />
       </button>
-
       <span style={{ fontSize: 12, color: BRAND.gray600, marginLeft: 8 }}>
         Página {page} de {totalPages} · {total} resultados
       </span>
