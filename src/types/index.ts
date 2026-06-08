@@ -57,6 +57,9 @@ export interface Producto {
   marca: string | null;
   modelo: string | null;
   plisPro: number | null;
+  pminPro: number | null;
+  pmayPro: number | null;
+  ciffSus: number | null;
   idFab: number | null;
 }
 

@@ -170,13 +170,14 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                 <table style={S.table}>
                   <thead>
                     <tr>
-                      <th style={S.th}>ID</th>
-                      <th style={S.th}>Descripción</th>
-                      <th style={S.th}>Marca</th>
-                      <th style={S.th}>Modelo</th>
-                      <th style={S.th}>Cód. Producto</th>
+                      <th style={S.th}>Cód. SIAM</th>
                       <th style={S.th}>Cód. Fábrica</th>
-                      <th style={S.th}>Cód. Barras</th>
+                      <th style={S.th}>Marca</th>
+                      <th style={S.th}>Descripción</th>
+                      <th style={{ ...S.th, textAlign: 'right' }}>P. Fact</th>
+                      <th style={{ ...S.th, textAlign: 'right' }}>P. Detalle</th>
+                      <th style={{ ...S.th, textAlign: 'right' }}>P. Mayor</th>
+                      <th style={{ ...S.th, textAlign: 'right' }}>P. CIIF</th>
                       <th style={S.th}>Estado</th>
                       <th style={S.th}></th>
                     </tr>
@@ -194,13 +195,23 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                           background: productoSel?.id === p.id ? '#ffeaea' : 'transparent',
                         }}
                       >
-                        <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{p.id}</td>
-                        <td style={{ ...S.td, fontWeight: 600, maxWidth: 320 }}>{p.descPro}</td>
+                        {/* <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{p.id}</td> */}
+                        <td style={{ ...S.td, fontSize: 12, color: BRAND.gray600 }}>{p.codPro ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
+                        <td style={{ ...S.td, fontSize: 12 }}>{p.codFab ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
                         <td style={S.td}>{p.marca ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
-                        <td style={S.td}>{p.modelo ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
-                        <td style={S.td}>{p.codPro ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
-                        <td style={S.td}>{p.codFab ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
-                        <td style={S.td}>{p.barra ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
+                        <td style={{ ...S.td, fontWeight: 600, maxWidth: 300 }}>{p.descPro}</td>
+                        <td style={{ ...S.td, textAlign: 'right' }}>
+                          {p.plisPro ? `$${p.plisPro.toFixed(2)}` : <span style={{ color: BRAND.gray400 }}>—</span>}
+                        </td>
+                        <td style={{ ...S.td, textAlign: 'right' }}>
+                          {p.pminPro ? `$${p.pminPro.toFixed(2)}` : <span style={{ color: BRAND.gray400 }}>—</span>}
+                        </td>
+                        <td style={{ ...S.td, textAlign: 'right' }}>
+                          {p.pmayPro ? `$${p.pmayPro.toFixed(2)}` : <span style={{ color: BRAND.gray400 }}>—</span>}
+                        </td>
+                        <td style={{ ...S.td, textAlign: 'right' }}>
+                          {p.ciffSus ? `$${p.ciffSus.toFixed(2)}` : <span style={{ color: BRAND.gray400 }}>—</span>}
+                        </td>
                         <td style={S.td}>
                           <span style={badgeStyle(p.estado === 'A' ? 'green' : 'red')}>
                             {p.estado === 'A' ? 'Activo' : p.estado ?? '—'}
