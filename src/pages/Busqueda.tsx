@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { Producto, AdvancedSearchParams } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface BusquedaProps {
   quickSearch?: string;
@@ -33,6 +34,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const [page, setPage]         = useState(1);
   const [loading, setLoading]   = useState(false);
   const [searched, setSearched] = useState(false);
+  const navigate = useNavigate();  
 
   // Panel flotante
   const [productoSel, setProductoSel]     = useState<Producto | null>(null);
@@ -239,6 +241,29 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                             <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
                             Agregar al carrito
                           </button>
+                          <button
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              padding: '5px 12px', borderRadius: 6,
+                              border: `1px solid ${BRAND.gray200}`,
+                              background: BRAND.white, color: BRAND.black,
+                              cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                              fontFamily: 'inherit', transition: 'all 0.15s', marginLeft: 6,
+                            }}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/productos/${p.id}/kardex`); }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
+                              (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.gray200;
+                              (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
+                            }}
+                          >
+                            <i className="ti ti-list" style={{ fontSize: 13 }} />
+                            Ver kardex
+                          </button>
+
                         </td>
                       </tr>
                     ))}

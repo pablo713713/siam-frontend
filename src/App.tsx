@@ -11,6 +11,7 @@ import { DetalleProducto } from './pages/DetalleProducto';
 import { PerfilCliente }   from './pages/PerfilCliente';
 import { useAuth } from './context/AuthContext';
 import { NuevaVenta } from './pages/NuevaVenta';
+import { KardexProducto } from './pages/KardexProducto';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -90,9 +91,18 @@ export default function App() {
               </PrivateRoute>
             }
           />
+          <Route
+          path="/productos/:id/kardex"
+          element={
+            <PrivateRoute>
+              <MainLayout><KardexProducto /></MainLayout>
+            </PrivateRoute>
+          }
+        />
 
 
         </Routes>
+        
       </BrowserRouter>
     </AuthProvider>
   );
