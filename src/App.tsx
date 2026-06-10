@@ -12,6 +12,7 @@ import { PerfilCliente }   from './pages/PerfilCliente';
 import { useAuth } from './context/AuthContext';
 import { NuevaVenta } from './pages/NuevaVenta';
 import { KardexProducto } from './pages/KardexProducto';
+import { TipoCambio } from './pages/TipoCambio';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -50,6 +51,14 @@ export default function App() {
             element={
               <RoleRoute role="Administrador">
                 <MainLayout><AsignarRol /></MainLayout>
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/tipo-cambio"
+            element={
+              <RoleRoute role="Administrador">
+                <MainLayout><TipoCambio /></MainLayout>
               </RoleRoute>
             }
           />

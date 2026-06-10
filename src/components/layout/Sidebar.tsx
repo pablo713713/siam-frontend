@@ -11,10 +11,11 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',   requiredRole: 'Administrador' },
   { section: 'Administración',                                                    requiredRole: 'Administrador' },
+  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',   requiredRole: 'Administrador' },
   { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',       requiredRole: 'Administrador' },
   { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol', requiredRole: 'Administrador' },
+  { icon: 'ti-currency-dollar', label: 'Tipo de Cambio', to: '/tipo-cambio', requiredRole: 'Administrador' },
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'     },
   { section: 'Clientes' },
