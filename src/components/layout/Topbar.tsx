@@ -152,23 +152,33 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
         <button
           onClick={() => { logout(); navigate('/login'); }}
           title="Cerrar sesión"
+          aria-label="Cerrar sesión"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 32, height: 32, borderRadius: 6,
-            border: `1px solid ${BRAND.black}`,
+            border: `1px solid ${BRAND.gray200}`,
             background: 'transparent', cursor: 'pointer',
-            color: BRAND.black, transition: 'all 0.15s',
+            color: BRAND.gray600, transition: 'all 0.15s',
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
             (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
+            (e.currentTarget as HTMLButtonElement).style.background = '#ffeaea';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.black;
-            (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
+            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.gray200;
+            (e.currentTarget as HTMLButtonElement).style.color = BRAND.gray600;
+            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
           }}
         >
-          <i className="ti ti-logout" style={{ fontSize: 16 }} aria-hidden="true" />
+          {}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
         </button>
       </div>
     </header>
