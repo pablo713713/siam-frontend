@@ -11,17 +11,19 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { section: 'Administración',                                                    requiredRole: 'Administrador' },
-  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',   requiredRole: 'Administrador' },
-  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',       requiredRole: 'Administrador' },
-  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol', requiredRole: 'Administrador' },
-  { icon: 'ti-currency-dollar', label: 'Tipo de Cambio', to: '/tipo-cambio', requiredRole: 'Administrador' },
+  { section: 'Administración',                                                      requiredRole: 'Administrador' },
+  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',     requiredRole: 'Administrador' },
+  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',         requiredRole: 'Administrador' },
+  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol',   requiredRole: 'Administrador' },
+  { icon: 'ti-currency-dollar',  label: 'Tipo de Cambio',    to: '/tipo-cambio',   requiredRole: 'Administrador' },
   { section: 'Inventario' },
-  { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'     },
+  { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'       },
   { section: 'Clientes' },
-  { icon: 'ti-user-circle',      label: 'Perfil de Cliente', to: '/clientes'     },
+  { icon: 'ti-users',            label: 'Gestión de Clientes', to: '/clientes'     },
   { section: 'Ventas' },
-  { icon: 'ti-shopping-cart', label: 'Nueva Venta', to: '/ventas/nueva', requiredRole: 'Vendedor' },
+  { icon: 'ti-shopping-cart',    label: 'Nueva Venta',       to: '/ventas/nueva',  requiredRole: 'Vendedor' },
+  { icon: 'ti-receipt',          label: 'Ver Ventas',        to: '/ventas'         },
+  { icon: 'ti-arrow-back-up',    label: 'Devoluciones',      to: '/devoluciones'   },
 ];
 
 export function Sidebar() {

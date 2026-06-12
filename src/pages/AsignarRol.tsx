@@ -103,7 +103,7 @@ export function AsignarRol() {
 
   return (
     <div>
-      {/* Buscador */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Buscar usuario</div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
@@ -133,7 +133,7 @@ export function AsignarRol() {
           </div>
         )}
 
-        {/* Resultados de búsqueda */}
+        {}
         {usuariosBusqueda.length > 0 && (
           <div style={{ marginTop: 14 }}>
             <div style={{ fontSize: 12, color: BRAND.gray600, marginBottom: 8 }}>
@@ -181,7 +181,7 @@ export function AsignarRol() {
         )}
       </div>
 
-      {/* Panel de asignación */}
+      {}
       {usuarioSel && (
         <div style={S.card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -201,7 +201,7 @@ export function AsignarRol() {
             </div>
           </div>
 
-          {/* Roles actuales */}
+          {}
           <div style={{ marginBottom: 20 }}>
             <div style={S.label}>Roles asignados actualmente</div>
             {loadingRoles && (
@@ -243,7 +243,7 @@ export function AsignarRol() {
 
           <div style={S.divider} />
 
-          {/* Asignar nuevo rol */}
+          {}
           {rolesDisponibles.length > 0 ? (
             <>
               <div style={{ ...S.formGroup, marginTop: 16 }}>
@@ -276,7 +276,7 @@ export function AsignarRol() {
         </div>
       )}
 
-      {/* Modal confirmación */}
+      {}
       {showModal && (
         <div
           style={{

@@ -13,6 +13,8 @@ import { useAuth } from './context/AuthContext';
 import { NuevaVenta } from './pages/NuevaVenta';
 import { KardexProducto } from './pages/KardexProducto';
 import { TipoCambio } from './pages/TipoCambio';
+import { VerVentas } from './pages/VerVentas';
+import { Devoluciones } from './pages/Devoluciones';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -29,89 +31,29 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          {/* Rutas solo Administrador */}
-          <Route
-            path="/dashboard"
-            element={
-              <RoleRoute role="Administrador">
-                <MainLayout><Dashboard /></MainLayout>
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/roles"
-            element={
-              <RoleRoute role="Administrador">
-                <MainLayout><Roles /></MainLayout>
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/asignar-rol"
-            element={
-              <RoleRoute role="Administrador">
-                <MainLayout><AsignarRol /></MainLayout>
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/tipo-cambio"
-            element={
-              <RoleRoute role="Administrador">
-                <MainLayout><TipoCambio /></MainLayout>
-              </RoleRoute>
-            }
-          />
+          {/* Administrador */}
+          <Route path="/dashboard" element={<RoleRoute role="Administrador"><MainLayout><Dashboard /></MainLayout></RoleRoute>} />
+          <Route path="/roles" element={<RoleRoute role="Administrador"><MainLayout><Roles /></MainLayout></RoleRoute>} />
+          <Route path="/asignar-rol" element={<RoleRoute role="Administrador"><MainLayout><AsignarRol /></MainLayout></RoleRoute>} />
+          <Route path="/tipo-cambio" element={<RoleRoute role="Administrador"><MainLayout><TipoCambio /></MainLayout></RoleRoute>} />
 
-          {/* Rutas para todos los autenticados */}
-          <Route
-            path="/busqueda"
-            element={
-              <PrivateRoute>
-                <MainLayout><Busqueda /></MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/productos/:id"
-            element={
-              <PrivateRoute>
-                <MainLayout><DetalleProducto /></MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/clientes"
-            element={
-              <PrivateRoute>
-                <MainLayout><PerfilCliente /></MainLayout>
-              </PrivateRoute>
-            }
-          />
+          {/* Inventario */}
+          <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
+          <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
+          <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />
 
-          {/* Redirect por defecto según rol */}
+          {/* Clientes */}
+          <Route path="/clientes" element={<PrivateRoute><MainLayout><PerfilCliente /></MainLayout></PrivateRoute>} />
+
+          {/* Ventas */}
+          <Route path="/ventas/nueva" element={<PrivateRoute><MainLayout><NuevaVenta /></MainLayout></PrivateRoute>} />
+          <Route path="/ventas" element={<PrivateRoute><MainLayout><VerVentas /></MainLayout></PrivateRoute>} />
+
+          {/* Devoluciones */}
+          <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />
+
           <Route path="*" element={<DefaultRedirect />} />
-
-          <Route
-            path="/ventas/nueva"
-            element={
-              <PrivateRoute>
-                <MainLayout><NuevaVenta /></MainLayout>
-              </PrivateRoute>
-            }
-          />
-          <Route
-          path="/productos/:id/kardex"
-          element={
-            <PrivateRoute>
-              <MainLayout><KardexProducto /></MainLayout>
-            </PrivateRoute>
-          }
-        />
-
-
         </Routes>
-        
       </BrowserRouter>
     </AuthProvider>
   );
