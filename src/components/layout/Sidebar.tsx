@@ -11,17 +11,19 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { section: 'Administración',                                                    requiredRole: 'Administrador' },
-  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',   requiredRole: 'Administrador' },
-  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',       requiredRole: 'Administrador' },
-  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol', requiredRole: 'Administrador' },
-  { icon: 'ti-currency-dollar', label: 'Tipo de Cambio', to: '/tipo-cambio', requiredRole: 'Administrador' },
+  { section: 'Administración',                                                      requiredRole: 'Administrador' },
+  { icon: 'ti-layout-dashboard', label: 'Dashboard',         to: '/dashboard',     requiredRole: 'Administrador' },
+  { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',         requiredRole: 'Administrador' },
+  { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol',   requiredRole: 'Administrador' },
+  { icon: 'ti-currency-dollar',  label: 'Tipo de Cambio',    to: '/tipo-cambio',   requiredRole: 'Administrador' },
   { section: 'Inventario' },
-  { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'     },
+  { icon: 'ti-search',           label: 'Búsqueda Avanzada', to: '/busqueda'       },
   { section: 'Clientes' },
-  { icon: 'ti-user-circle',      label: 'Perfil de Cliente', to: '/clientes'     },
+  { icon: 'ti-users',            label: 'Gestión de Clientes', to: '/clientes'     },
   { section: 'Ventas' },
-  { icon: 'ti-shopping-cart', label: 'Nueva Venta', to: '/ventas/nueva', requiredRole: 'Vendedor' },
+  { icon: 'ti-shopping-cart',    label: 'Nueva Venta',       to: '/ventas/nueva',  requiredRole: 'Vendedor' },
+  { icon: 'ti-receipt',          label: 'Ver Ventas',        to: '/ventas'         },
+  { icon: 'ti-arrow-back-up',    label: 'Devoluciones',      to: '/devoluciones'   },
 ];
 
 export function Sidebar() {
@@ -119,18 +121,23 @@ export function Sidebar() {
               {usuario?.roles?.join(', ') ?? 'Sin rol'}
             </div>
           </div>
-          <button
-            onClick={() => { logout(); navigate('/login'); }}
-            aria-label="Cerrar sesión"
-            title="Cerrar sesión"
-            style={{
-              background: 'none', border: 'none', padding: 4,
-              cursor: 'pointer', display: 'flex', alignItems: 'center',
-              color: BRAND.sidebarMuted, borderRadius: 4,
-            }}
-          >
-            <i className="ti ti-logout" aria-hidden="true" style={{ fontSize: 16 }} />
-          </button>
+            {/* <button
+                onClick={() => { logout(); navigate('/login'); }}
+                aria-label="Cerrar sesión"
+                title="Cerrar sesión"
+                style={{
+                  background: 'none', border: 'none', padding: 4,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  color: BRAND.sidebarMuted, borderRadius: 4,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+          </button> */}
         </div>
       </div>
     </aside>

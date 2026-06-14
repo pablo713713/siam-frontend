@@ -36,7 +36,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();  
 
-  // Panel flotante
   const [productoSel, setProductoSel]     = useState<Producto | null>(null);
   const [resumen, setResumen]             = useState<ResumenProducto | null>(null);
   const [loadingResumen, setLoadingResumen] = useState(false);
@@ -288,7 +287,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
         </div>
       )}
 
-      {/* Panel flotante inferior */}
+      {}
       {productoSel && (
         <div style={{
           position: 'fixed', bottom: 0, left: 220, right: 0,
@@ -317,10 +316,10 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             </button>
           </div>
 
-          {/* Contenido en dos columnas */}
+          {}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
 
-            {/* Izquierda — Stock por almacén */}
+            {}
             <div style={{ padding: '12px 20px', borderRight: `1px solid ${BRAND.gray200}`, overflowY: 'auto' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                 Stock por almacén
@@ -356,7 +355,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
               )}
             </div>
 
-            {/* Derecha — Detalle del producto */}
+            {}
             <div style={{ padding: '12px 20px', overflowY: 'auto' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>
                 Detalle del producto
