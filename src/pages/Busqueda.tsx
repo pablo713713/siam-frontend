@@ -105,7 +105,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   return (
     <div style={{ paddingBottom: productoSel ? 320 : 0, transition: 'padding-bottom 0.3s' }}>
 
-      {/* Formulario de búsqueda */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Búsqueda avanzada de productos</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -130,19 +130,9 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             />
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button style={btnStyle('primary')} onClick={() => search(1)} disabled={loading}>
-            <i className="ti ti-search" aria-hidden="true" />
-            {loading ? 'Buscando…' : 'Buscar'}
-          </button>
-          <button style={btnStyle()} onClick={clear}>
-            <i className="ti ti-x" aria-hidden="true" />
-            Limpiar
-          </button>
-        </div>
       </div>
 
-      {/* Resultados */}
+      {}
       {searched && (
         <div style={S.card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -196,7 +186,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                           background: productoSel?.id === p.id ? '#ffeaea' : 'transparent',
                         }}
                       >
-                        {/* <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{p.id}</td> */}
+                        {}
                         <td style={{ ...S.td, fontSize: 12, color: BRAND.gray600 }}>{p.codPro ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
                         <td style={{ ...S.td, fontSize: 12 }}>{p.codFab ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
                         <td style={S.td}>{p.marca ?? <span style={{ color: BRAND.gray400 }}>—</span>}</td>
@@ -236,6 +226,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                               (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.gray200;
                               (e.currentTarget as HTMLButtonElement).style.color = BRAND.black;
                             }}
+                            onClick={(e) => { e.stopPropagation(); navigate('/ventas/nueva'); }}
                           >
                             <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
                             Agregar al carrito
@@ -296,7 +287,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
           zIndex: 500, height: 300,
           display: 'flex', flexDirection: 'column',
         }}>
-          {/* Header del panel */}
+          {}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '10px 20px', borderBottom: `1px solid ${BRAND.gray200}`,

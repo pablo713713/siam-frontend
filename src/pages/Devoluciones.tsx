@@ -169,15 +169,6 @@ export function Devoluciones() {
             onKeyDown={e => e.key === 'Enter' && buscarVenta()}
           />
         </div>
-        <button style={btnStyle('primary')} onClick={buscarVenta} disabled={loadingVenta}>
-          <i className="ti ti-search" />
-          {loadingVenta ? 'Buscando…' : 'Buscar venta'}
-        </button>
-        {venta && (
-          <button style={btnStyle('secondary')} onClick={limpiar}>
-            <i className="ti ti-refresh" /> Nueva búsqueda
-          </button>
-        )}
       </div>
 
       {}

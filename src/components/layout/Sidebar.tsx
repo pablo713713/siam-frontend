@@ -62,7 +62,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Nav */}
+      {}
       <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
         {navFiltrado.map((item, i) => {
           if (item.section) {
@@ -75,9 +75,7 @@ export function Sidebar() {
               </div>
             );
           }
-          const active =
-            pathname === item.to ||
-            (item.to !== '/dashboard' && pathname.startsWith(item.to ?? '__none__'));
+          const active = pathname === item.to;
 
           return (
             <div

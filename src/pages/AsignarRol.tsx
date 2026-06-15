@@ -104,24 +104,21 @@ export function AsignarRol() {
   return (
     <div>
       {}
-      <div style={S.card}>
-        <div style={S.cardTitle}>Buscar usuario</div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label style={S.label}>Nombre, apellido o alias</label>
-            <input
-              style={S.input}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && buscarUsuarios()}
-              placeholder="Ej: bladimir, paz, bladyd"
-            />
+        <div style={S.card}>
+          <div style={S.cardTitle}>Buscar usuario</div>
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label style={S.label}>Nombre, apellido o alias</label>
+              <input
+                style={S.input}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && buscarUsuarios()}
+                placeholder="Ej: bladimir, paz, bladyd"
+              />
+            </div>
           </div>
-          <button style={btnStyle('primary')} onClick={buscarUsuarios} disabled={loadingSearch}>
-            <i className="ti ti-search" aria-hidden="true" />
-            {loadingSearch ? 'Buscando…' : 'Buscar'}
-          </button>
-        </div>
 
         {msg && (
           <div style={{
