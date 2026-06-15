@@ -130,16 +130,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             />
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button style={btnStyle('primary')} onClick={() => search(1)} disabled={loading}>
-            <i className="ti ti-search" aria-hidden="true" />
-            {loading ? 'Buscando…' : 'Buscar'}
-          </button>
-          <button style={btnStyle()} onClick={clear}>
-            <i className="ti ti-x" aria-hidden="true" />
-            Limpiar
-          </button>
-        </div>
       </div>
 
       {}

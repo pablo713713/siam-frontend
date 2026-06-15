@@ -96,7 +96,6 @@ export function NuevaVenta() {
     } catch { flash('Error al cargar cliente ocasional.', 'err'); }
   };
 
-  // ── Producto ──
   const handleProductoChange = (val: string) => {
     setQueryProducto(val);
     if (debounce.current) clearTimeout(debounce.current);
@@ -140,13 +139,11 @@ export function NuevaVenta() {
     setQueryProducto(''); setProductoResults([]);
   };
 
-  // ── Cantidad — sincroniza distribución automáticamente ──
   const cambiarCantidad = (idFab: number, nuevaCantidad: number) => {
     if (nuevaCantidad < 1) return;
     setCarrito((prev) => prev.map((item) => {
       if (item.idFab !== idFab) return item;
 
-      // Si todo cabe en Motor Zone, distribución simple
       if (nuevaCantidad <= item.stockMotorZone) {
         return {
           ...item,
@@ -156,7 +153,6 @@ export function NuevaVenta() {
         };
       }
 
-      // Si no, resetear distribución para que el usuario la ajuste
       return {
         ...item,
         cantidad: nuevaCantidad,
@@ -168,7 +164,6 @@ export function NuevaVenta() {
     }));
   };
 
-  // ── Distribución manual ──
   const cambiarDistribucion = (idFab: number, codSuc: string, nomSuc: string, cantidadAlmacen: number) => {
     if (!codSuc) return;
     setCarrito((prev) => prev.map((item) => {
@@ -202,7 +197,6 @@ export function NuevaVenta() {
 
   const totalCarrito = carrito.reduce((sum, i) => sum + i.importe, 0);
 
-  // ── Confirmar venta ──
   const confirmarVenta = async () => {
     if (!clienteSel) { flash('Seleccioná un cliente.', 'err'); return; }
     if (!carrito.length) { flash('El carrito está vacío.', 'err'); return; }
@@ -264,7 +258,7 @@ export function NuevaVenta() {
 
   return (
     <div>
-      {/* ── Cliente ── */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Cliente</div>
         {!clienteSel ? (
@@ -280,14 +274,6 @@ export function NuevaVenta() {
                   placeholder="Ej: Juan, Pérez, Ferretería..."
                 />
               </div>
-              <button style={btnStyle('primary')} onClick={buscarCliente} disabled={loadingCliente}>
-                <i className="ti ti-search" aria-hidden="true" />
-                {loadingCliente ? 'Buscando…' : 'Buscar'}
-              </button>
-              <button style={btnStyle()} onClick={seleccionarOcasional}>
-                <i className="ti ti-user-off" aria-hidden="true" />
-                Ocasional
-              </button>
             </div>
             {clienteResults.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
