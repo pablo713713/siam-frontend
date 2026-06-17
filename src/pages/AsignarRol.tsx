@@ -41,7 +41,7 @@ export function AsignarRol() {
     setRolesUsuario([]);
     try {
       const { data } = await api.get('/usuarios/search', {
-        params: { q: query.trim(), limit: 20 },
+        params: { q: query.trim(), limit: 200 },
       });
       setUsuariosBusqueda(data.data ?? []);
       if ((data.data ?? []).length === 0) {
@@ -115,7 +115,7 @@ export function AsignarRol() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && buscarUsuarios()}
-                placeholder="Ej: bladimir, paz, bladyd"
+
               />
             </div>
           </div>

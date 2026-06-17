@@ -22,8 +22,8 @@ const NAV: NavItem[] = [
   { icon: 'ti-users',            label: 'Gestión de Clientes', to: '/clientes'     },
   { section: 'Ventas' },
   { icon: 'ti-shopping-cart',    label: 'Nueva Venta',       to: '/ventas/nueva',  requiredRole: 'Vendedor' },
-  { icon: 'ti-receipt',          label: 'Ver Ventas',        to: '/ventas'         },
-  { icon: 'ti-arrow-back-up',    label: 'Devoluciones',      to: '/devoluciones'   },
+  { icon: 'ti-receipt',          label: 'Ver Ventas',        to: '/ventas',   requiredRole: 'Administrador'         },
+  { icon: 'ti-arrow-back-up',    label: 'Devoluciones',      to: '/devoluciones',   requiredRole: 'Administrador'   },
 ];
 
 export function Sidebar() {
