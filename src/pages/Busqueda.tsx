@@ -124,7 +124,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
         <div style={S.cardTitle}>Búsqueda avanzada de productos</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={S.label}>Nombre / descripción</label>
             <input
               style={S.input}
               value={q}

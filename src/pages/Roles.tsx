@@ -21,8 +21,7 @@ export function Roles() {
     setLoading(true);
     try {
       const { data } = await api.get<Rol[]>('/roles');
-      setRoles(Array.isArray(data) ? data : []);
-    } catch {
+      setRoles(Array.isArray(data) ? data : []);    } catch {
       setRoles([]);
     } finally {
       setLoading(false);
@@ -75,7 +74,7 @@ export function Roles() {
   return (
     <div>
       {}
-      <div style={S.card}>
+      {/* <div style={S.card}>
         <div style={S.cardTitle}>{editId !== null ? 'Editar Rol' : 'Crear Nuevo Rol'}</div>
 
         <form onSubmit={handleSubmit}>
@@ -90,7 +89,7 @@ export function Roles() {
                 style={S.input}
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Administrador"
+                placeholder=""
                 required
                 maxLength={50}
               />
@@ -129,7 +128,7 @@ export function Roles() {
             {msg.text}
           </div>
         )}
-      </div>
+      </div> */}
 
       {}
       <div style={S.card}>
