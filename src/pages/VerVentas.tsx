@@ -118,8 +118,6 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
     return isoDate(d) === end;
   };
 
-  // Selección de rango 100% automática: al elegir el segundo día se aplica
-  // el filtro y el calendario se cierra solo, sin necesidad de un botón.
   const clickDia = (d: Date) => {
     const iso = isoDate(d);
     if (!seleccionando || !selStart) {

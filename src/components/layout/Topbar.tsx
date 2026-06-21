@@ -10,6 +10,11 @@ const ROUTE_LABELS: Record<string, string> = {
   '/roles':       'Gestión de Roles',
   '/asignar-rol': 'Asignación de Roles',
   '/busqueda':    'Búsqueda de Productos',
+  '/ventas/nueva': 'Nueva Venta',
+  '/ventas': 'Ventas',
+  '/devoluciones': 'Devoluciones',
+  '/clientes': 'Clientes',
+  '/tipo-cambio': 'Tipo de Cambio',
 };
 
 interface TopbarProps {
@@ -66,12 +71,12 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
       padding: '0 24px', height: 56,
       display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0,
     }}>
-      {/* Título de sección actual */}
+      {}
       <span style={{ fontSize: 15, fontWeight: 700, color: BRAND.black, letterSpacing: 0.5, flex: 1 }}>
         {ROUTE_LABELS[pathname] ?? 'SIAM'}
       </span>
 
-      {/* ── Búsqueda rápida (HU-F3.01) ── */}
+      {}
       <div style={{ position: 'relative', width: 280 }}>
         <i className="ti ti-search" aria-hidden="true" style={{
           position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',

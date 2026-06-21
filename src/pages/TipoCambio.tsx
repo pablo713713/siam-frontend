@@ -71,7 +71,7 @@ export function TipoCambio() {
 
   return (
     <div style={{ maxWidth: 480 }}>
-      {/* Valor vigente */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Tipo de cambio paralelo vigente</div>
         {loadingVigente ? (
@@ -109,7 +109,7 @@ export function TipoCambio() {
         )}
       </div>
 
-      {/* Actualizar */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Actualizar valor del dólar paralelo</div>
         <div style={S.formGroup}>

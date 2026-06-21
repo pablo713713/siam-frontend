@@ -220,7 +220,7 @@ export function Devoluciones() {
                 </div>
               </div>
               <div style={{ fontSize: 14, color: BRAND.gray600, lineHeight: 1.6 }}>
-                ¿Querés realizar la siguiente devolución?
+                ¿Quieres realizar la siguiente devolución?
               </div>
             </div>
 

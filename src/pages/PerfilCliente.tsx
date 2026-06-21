@@ -8,7 +8,6 @@ import type {
   CompraHistorial,
 } from '../types';
 
-// ── Tipos locales ─────────────────────────────────────────────────────────────
 interface ClienteSearch {
   codCli: number;
   nomCli: string | null;
@@ -23,7 +22,6 @@ interface ClienteSearch {
   baja: string;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-BO', {
     style: 'currency',
@@ -47,7 +45,6 @@ function nombreCliente(c: ClienteSearch) {
   return [c.nomCli, c.apeCli].filter(Boolean).join(' ') || '—';
 }
 
-// ── Toggle / Switch ───────────────────────────────────────────────────────────
 function Toggle({
   value,
   onChange,
@@ -95,18 +92,15 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-// ── Página ────────────────────────────────────────────────────────────────────
 export function PerfilCliente() {
   const navigate = useNavigate();
 
-  // ── Buscador por nombre/CI ──
   const [query, setQuery] = useState('');
   const [resultados, setResultados] = useState<ClienteSearch[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [errorSearch, setErrorSearch] = useState('');
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Perfil seleccionado ──
   const [codCli, setCodCli] = useState('');
   const [perfil, setPerfil] = useState<ClientePerfil | null>(null);
   const [historial, setHistorial] = useState<HistorialComprasResponse | null>(null);
@@ -114,17 +108,14 @@ export function PerfilCliente() {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [errorPerfil, setErrorPerfil] = useState('');
 
-  // ── Extensión ──
   const [aceptaDevoluciones, setAceptaDevoluciones] = useState(false);
   const [savingExt, setSavingExt] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
 
-  // ── Detalle de compra (drawer) ──
   const [compraSelId, setCompraSelId] = useState<string | null>(null);
   const [detalleCompra, setDetalleCompra] = useState<any>(null);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
 
-  // ── Buscar por nombre/CI/NIT ──
   const buscarClientes = async (q: string) => {
     if (!q.trim()) { setResultados([]); return; }
     setLoadingSearch(true);
@@ -147,7 +138,6 @@ export function PerfilCliente() {
     debounce.current = setTimeout(() => buscarClientes(val), 400);
   };
 
-  // ── Cargar perfil completo al hacer click en un resultado ──
   const seleccionarCliente = async (c: ClienteSearch) => {
     setResultados([]);
     setQuery(nombreCliente(c));
@@ -172,20 +162,17 @@ export function PerfilCliente() {
     }
   };
 
-  // ── Cargar historial ──
   const cargarHistorial = async (cod: string) => {
     setLoadingHistorial(true);
     try {
       const { data } = await api.get<HistorialComprasResponse>(`/clientes/${cod}/historial-compras`);
       setHistorial(data);
     } catch {
-      // silencioso
     } finally {
       setLoadingHistorial(false);
     }
   };
 
-  // ── Guardar extensión ──
   const guardarExtension = async () => {
     if (!codCli) return;
     setSavingExt(true);
@@ -202,9 +189,8 @@ export function PerfilCliente() {
     }
   };
 
-  // ── Cargar detalle de compra ──
   const verDetalleCompra = async (compra: CompraHistorial) => {
-    if (compra.tipo !== 'CONTADO') return; // solo ventas tienen endpoint de detalle
+    if (compra.tipo !== 'CONTADO') return;
     setCompraSelId(compra.id);
     setDetalleCompra(null);
     setLoadingDetalle(true);
@@ -218,7 +204,6 @@ export function PerfilCliente() {
     }
   };
 
-  // ── Badges ──
   const tipoBadge = (tipo: CompraHistorial['tipo']) => (
     <span style={badgeStyle(tipo === 'CREDITO' ? 'gray' : 'green')}>
       {tipo === 'CREDITO' ? 'Crédito' : 'Contado'}
@@ -230,15 +215,13 @@ export function PerfilCliente() {
     return <span style={badgeStyle(ok ? 'green' : 'gray')}>{ok ? 'Completado' : estado}</span>;
   };
 
-  // ── Crédito del cliente (viene del search) ──
-  const clienteActual = resultados.length === 0 && perfil ? null : null; // del search
-  // El indicador de crédito viene de la extensión (limite_credito) o del campo CREDITO_MAXIMO en search
+  const clienteActual = resultados.length === 0 && perfil ? null : null;
   const puedeCredito =
     perfil?.extension?.limite_credito != null && Number(perfil.extension.limite_credito) > 0;
 
   return (
     <div>
-      {/* Título */}
+      {}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>Gestión de Clientes</div>
         <div style={{ color: BRAND.gray600, fontSize: 14, marginTop: 4 }}>
@@ -246,7 +229,7 @@ export function PerfilCliente() {
         </div>
       </div>
 
-      {/* Buscador */}
+      {}
       <div style={{ ...S.card, position: 'relative' }}>
         <label style={S.label}>Buscar cliente</label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -273,7 +256,7 @@ export function PerfilCliente() {
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-        {/* Dropdown resultados */}
+        {}
         {resultados.length > 0 && (
           <div
             style={{
@@ -298,7 +281,7 @@ export function PerfilCliente() {
                   onMouseEnter={e => (e.currentTarget.style.background = BRAND.gray50)}
                   onMouseLeave={e => (e.currentTarget.style.background = BRAND.white)}
                 >
-                  {/* Avatar */}
+                  {}
                   <div
                     style={{
                       width: 36, height: 36, borderRadius: '50%', background: BRAND.red,
@@ -308,7 +291,7 @@ export function PerfilCliente() {
                   >
                     {nombreCliente(c).charAt(0).toUpperCase()}
                   </div>
-                  {/* Info */}
+                  {}
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: BRAND.black, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {nombreCliente(c)}
@@ -318,7 +301,7 @@ export function PerfilCliente() {
                       {c.telDom && ` · ${c.telDom}`}
                     </div>
                   </div>
-                  {/* Crédito badge */}
+                  {}
                   <span style={badgeStyle(tieneCredito ? 'green' : 'gray')}>
                     {tieneCredito ? `Crédito: ${fmtMoney(Number(c.creditoMaximo))}` : 'Sin crédito'}
                   </span>
@@ -335,7 +318,7 @@ export function PerfilCliente() {
         )}
       </div>
 
-      {/* Loading perfil */}
+      {}
       {loadingPerfil && (
         <div style={{ ...S.card, textAlign: 'center', padding: 32, color: BRAND.gray600 }}>
           <i className="ti ti-loader-2" style={{ fontSize: 24, display: 'block', marginBottom: 6, animation: 'spin 1s linear infinite' }} />
@@ -343,7 +326,7 @@ export function PerfilCliente() {
         </div>
       )}
 
-      {/* Error perfil */}
+      {}
       {errorPerfil && (
         <div style={{ ...S.card, borderLeft: `4px solid ${BRAND.red}`, color: BRAND.red, display: 'flex', gap: 8, alignItems: 'center' }}>
           <i className="ti ti-alert-circle" />{errorPerfil}
@@ -352,7 +335,7 @@ export function PerfilCliente() {
 
       {perfil && (
         <>
-          {/* ── Información básica del cliente ── */}
+          {}
           <div
             style={{
               ...S.card,
@@ -360,7 +343,7 @@ export function PerfilCliente() {
               display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap',
             }}
           >
-            {/* Avatar */}
+            {}
             <div
               style={{
                 width: 56, height: 56, borderRadius: '50%', background: BRAND.red,
@@ -377,7 +360,7 @@ export function PerfilCliente() {
                 <span style={badgeStyle(perfil.activo ? 'green' : 'red')}>
                   {perfil.activo ? 'Activo' : 'Inactivo'}
                 </span>
-                {/* Indicador de crédito */}
+                {}
                 {puedeCredito ? (
                   <span style={{ ...badgeStyle('green'), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <i className="ti ti-credit-card" style={{ fontSize: 12 }} />
@@ -403,7 +386,7 @@ export function PerfilCliente() {
             </div>
           </div>
 
-          {/* ── Configuraciones del cliente ── */}
+          {}
           <div style={S.card}>
             <div style={{ ...S.cardTitle, display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="ti ti-settings" style={{ color: BRAND.red, fontSize: 15 }} />
@@ -427,7 +410,7 @@ export function PerfilCliente() {
             </div>
           </div>
 
-          {/* ── Historial de Compras ── */}
+          {}
           <div style={S.card}>
             <div
               style={{
@@ -458,7 +441,7 @@ export function PerfilCliente() {
 
             {!loadingHistorial && historial && historial.historial.length > 0 && (
               <>
-                {/* Totales rápidos */}
+                {}
                 <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap' }}>
                   {(['CONTADO', 'CREDITO'] as const).map(tipo => {
                     const its = historial.historial.filter(h => h.tipo === tipo);
@@ -538,7 +521,7 @@ export function PerfilCliente() {
         </>
       )}
 
-      {/* ── Drawer / panel de detalle de compra ── */}
+      {}
       {compraSelId && (
         <>
           <div
@@ -552,7 +535,7 @@ export function PerfilCliente() {
               boxShadow: '-4px 0 32px rgba(0,0,0,0.18)',
             }}
           >
-            {/* Header drawer */}
+            {}
             <div
               style={{
                 padding: '20px 24px', borderBottom: `1px solid ${BRAND.gray200}`,
@@ -575,7 +558,7 @@ export function PerfilCliente() {
               </button>
             </div>
 
-            {/* Body drawer */}
+            {}
             <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
               {loadingDetalle && (
                 <div style={{ textAlign: 'center', padding: 48, color: BRAND.gray600 }}>
@@ -592,7 +575,7 @@ export function PerfilCliente() {
 
               {detalleCompra && !detalleCompra.error && (
                 <>
-                  {/* Info general */}
+                  {}
                   <div style={{ background: BRAND.gray50, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
                     <table style={{ ...S.table, fontSize: 13 }}>
                       <tbody>
@@ -625,7 +608,7 @@ export function PerfilCliente() {
                     </table>
                   </div>
 
-                  {/* Items */}
+                  {}
                   <div style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray600, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 10 }}>
                       Productos ({detalleCompra.items?.length ?? 0})
@@ -658,7 +641,7 @@ export function PerfilCliente() {
                     </div>
                   </div>
 
-                  {/* Total */}
+                  {}
                   <div
                     style={{
                       display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16,
@@ -671,7 +654,7 @@ export function PerfilCliente() {
                     </span>
                   </div>
 
-                  {/* Link a devolución si aplica */}
+                  {}
                   {detalleCompra.estado !== 'A' && perfil?.extension?.acepta_devoluciones && (
                     <div style={{ marginTop: 16 }}>
                       <button

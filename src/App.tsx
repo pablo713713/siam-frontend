@@ -31,25 +31,25 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
 
-          {/* Administrador */}
+          {}
           <Route path="/dashboard" element={<RoleRoute role="Administrador"><MainLayout><Dashboard /></MainLayout></RoleRoute>} />
           <Route path="/roles" element={<RoleRoute role="Administrador"><MainLayout><Roles /></MainLayout></RoleRoute>} />
           <Route path="/asignar-rol" element={<RoleRoute role="Administrador"><MainLayout><AsignarRol /></MainLayout></RoleRoute>} />
           <Route path="/tipo-cambio" element={<RoleRoute role="Administrador"><MainLayout><TipoCambio /></MainLayout></RoleRoute>} />
 
-          {/* Inventario */}
+          {}
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />
 
-          {/* Clientes */}
+          {}
           <Route path="/clientes" element={<PrivateRoute><MainLayout><PerfilCliente /></MainLayout></PrivateRoute>} />
 
-          {/* Ventas */}
+          {}
           <Route path="/ventas/nueva" element={<PrivateRoute><MainLayout><NuevaVenta /></MainLayout></PrivateRoute>} />
           <Route path="/ventas" element={<PrivateRoute><MainLayout><VerVentas /></MainLayout></PrivateRoute>} />
 
-          {/* Devoluciones */}
+          {}
           <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />
 
           <Route path="*" element={<DefaultRedirect />} />
