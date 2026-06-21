@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
 import type { Rol, UsuarioRolResponse } from '../types';
@@ -21,6 +21,7 @@ export function AsignarRol() {
   const [selectedRol, setSelectedRol]     = useState('');
   const [showModal, setShowModal]         = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flash = (text: string, type: 'ok' | 'err' = 'ok') => {
     setMsg({ text, type });
@@ -33,25 +34,22 @@ export function AsignarRol() {
       .catch(() => {});
   }, []);
 
-  const buscarUsuarios = async () => {
-    if (!query.trim()) return;
+  const buscarUsuarios = async (val: string) => {
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!val.trim()) { setUsuariosBusqueda([]); return; }
     setLoadingSearch(true);
-    setUsuariosBusqueda([]);
-    setUsuarioSel(null);
-    setRolesUsuario([]);
-    try {
-      const { data } = await api.get('/usuarios/search', {
-        params: { q: query.trim(), limit: 200 },
-      });
-      setUsuariosBusqueda(data.data ?? []);
-      if ((data.data ?? []).length === 0) {
-        flash('No se encontraron usuarios con ese criterio.', 'err');
+    debounce.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/usuarios/search', {
+          params: { q: val.trim(), limit: 20 },
+        });
+        setUsuariosBusqueda(data.data ?? []);
+      } catch {
+        setUsuariosBusqueda([]);
+      } finally {
+        setLoadingSearch(false);
       }
-    } catch {
-      flash('Error al buscar usuarios.', 'err');
-    } finally {
-      setLoadingSearch(false);
-    }
+    }, 400);
   };
 
   const seleccionarUsuario = async (u: UsuarioSearch) => {
@@ -113,12 +111,15 @@ export function AsignarRol() {
               <input
                 style={S.input}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && buscarUsuarios()}
-
+                onChange={(e) => { setQuery(e.target.value); buscarUsuarios(e.target.value); }}
+                placeholder="Ej: bladimir, paz, bladyd"
               />
             </div>
           </div>
+
+        {loadingSearch && (
+          <div style={{ marginTop: 10, fontSize: 12, color: BRAND.gray600 }}>Buscando…</div>
+        )}
 
         {msg && (
           <div style={{

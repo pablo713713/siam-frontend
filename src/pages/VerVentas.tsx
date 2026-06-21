@@ -77,7 +77,6 @@ function nombreCliente(v: VentaResumen) {
   return partes.length > 0 ? partes.join(' ') : 'Cliente ocasional';
 }
 
-// ── Calendario con rango ──
 interface CalendarioProps {
   desde: string;
   hasta: string;
@@ -119,6 +118,8 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
     return isoDate(d) === end;
   };
 
+  // Selección de rango 100% automática: al elegir el segundo día se aplica
+  // el filtro y el calendario se cierra solo, sin necesidad de un botón.
   const clickDia = (d: Date) => {
     const iso = isoDate(d);
     if (!seleccionando || !selStart) {
@@ -131,6 +132,7 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
       setSelStart(a);
       setSeleccionando(false);
       onChange(a, b);
+      onClose();
     }
   };
 
@@ -184,9 +186,9 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
         ))}
       </div>
 
-      {/* Calendario */}
+      {}
       <div style={{ padding: 16 }}>
-        {/* Header mes */}
+        {}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <button onClick={mesAnterior} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: BRAND.gray600 }}>
             <i className="ti ti-chevron-left" style={{ fontSize: 16 }} />
@@ -197,7 +199,7 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
           </button>
         </div>
 
-        {/* Días de la semana */}
+        {}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 36px)', gap: 2, marginBottom: 4 }}>
           {DIAS.map((d) => (
             <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: BRAND.gray400, padding: '4px 0' }}>{d}</div>
@@ -237,7 +239,7 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
           })}
         </div>
 
-        {/* Rango seleccionado */}
+        {}
         <div style={{ marginTop: 12, fontSize: 12, color: BRAND.gray600, textAlign: 'center' }}>
           {selStart && selEnd
             ? `${selStart} → ${selEnd}`
@@ -248,11 +250,6 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
           <button style={btnStyle()} onClick={onClose}>Cancelar</button>
-          {selStart && selEnd && (
-            <button style={btnStyle('primary')} onClick={() => { onChange(selStart, selEnd); onClose(); }}>
-              Aplicar rango
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -323,15 +320,15 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
               <div style={{ background: BRAND.gray50, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
                 <table style={{ ...S.table, fontSize: 13 }}>
                   <tbody>
-                    {[
+                    {([
                       ['Fecha', fmtDateTime(detalle.fecha)],
                       ['Cliente', nombreCliente(detalle)],
                       detalle.numCiNit ? ['CI / NIT', detalle.numCiNit] : null,
                       detalle.descuento > 0 ? ['Descuento', `${detalle.descuento}%`] : null,
                       detalle.obs ? ['Observación', detalle.obs] : null,
                       ['Vendedor', detalle.codUsu],
-                    ].filter(Boolean).map(([label, value]) => (
-                      <tr key={label as string}>
+                    ] as ([string, string] | null)[]).filter((row): row is [string, string] => row !== null).map(([label, value]) => (
+                      <tr key={label}>
                         <td style={{ ...S.td, color: BRAND.gray600, fontWeight: 600, width: 130, fontSize: 12 }}>{label}</td>
                         <td style={S.td}>{value}</td>
                       </tr>
@@ -396,7 +393,6 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
   );
 }
 
-// ── Página principal ──
 export function VerVentas() {
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
@@ -426,7 +422,6 @@ export function VerVentas() {
     }
   }, [desde, hasta]);
 
-  // Carga inicial — últimas 200 sin filtro de fecha
   useEffect(() => { cargar(1, '', ''); }, []);
 
   const aplicarRango = (d: string, h: string) => {
@@ -457,24 +452,20 @@ export function VerVentas() {
         </div>
       </div>
 
-      {/* Filtro de fecha */}
-      <div style={{ ...S.card, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
+      {}
+      <div style={{ ...S.card, display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative' }}>
+          <label style={S.label}>Rango de fechas</label>
           <button
+            onClick={() => setShowCal(s => !s)}
             style={{
-              ...btnStyle(),
-              gap: 8, minWidth: 240, justifyContent: 'flex-start',
-              border: `1px solid ${showCal ? BRAND.red : BRAND.gray200}`,
+              ...S.input, display: 'flex', alignItems: 'center', gap: 8,
+              cursor: 'pointer', background: BRAND.white, minWidth: 220,
             }}
-            onClick={() => setShowCal((v) => !v)}
           >
-            <i className="ti ti-calendar" style={{ color: desde ? BRAND.red : BRAND.gray400 }} />
-            <span style={{ flex: 1, textAlign: 'left', color: desde ? BRAND.black : BRAND.gray400 }}>
-              {labelFecha}
-            </span>
-            <i className="ti ti-chevron-down" style={{ fontSize: 12, color: BRAND.gray400 }} />
+            <i className="ti ti-calendar" style={{ color: BRAND.gray600 }} />
+            {labelFecha}
           </button>
-
           {showCal && (
             <Calendario
               desde={desde}
@@ -485,16 +476,17 @@ export function VerVentas() {
           )}
         </div>
 
-        {(desde || hasta) && (
-          <button style={btnStyle()} onClick={limpiar}>
-            <i className="ti ti-x" /> Limpiar filtro
-          </button>
+        {loading && (
+          <span style={{ fontSize: 12, color: BRAND.gray600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-loader-2" /> Buscando…
+          </span>
         )}
 
-        <button style={btnStyle('primary')} onClick={() => cargar(1)} disabled={loading}>
-          <i className="ti ti-refresh" />
-          {loading ? 'Cargando…' : 'Actualizar'}
-        </button>
+        {(desde || hasta) && (
+          <button style={btnStyle('secondary')} onClick={limpiar}>
+            <i className="ti ti-x" /> Limpiar
+          </button>
+        )}
       </div>
 
       {error && (
@@ -503,7 +495,7 @@ export function VerVentas() {
         </div>
       )}
 
-      {/* KPIs */}
+      {}
       {!loading && ventas.length > 0 && (
         <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
           {[

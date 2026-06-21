@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
@@ -52,6 +52,29 @@ function nombreCliente(v: VentaDetalle) {
   return partes.length > 0 ? partes.join(' ') : 'Cliente ocasional';
 }
 
+const overlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,0.45)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000,
+  padding: '16px',
+};
+
+const modalStyle: React.CSSProperties = {
+  background: BRAND.white,
+  borderRadius: 12,
+  padding: '28px 32px',
+  maxWidth: 440,
+  width: '100%',
+  boxShadow: '0 8px 40px rgba(0,0,0,0.18)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 20,
+};
+
 export function Devoluciones() {
   const { usuario } = useAuth();
 
@@ -63,37 +86,44 @@ export function Devoluciones() {
   const [items, setItems] = useState<ItemDevolucion[]>([]);
   const [obs, setObs] = useState('');
   const [procesando, setProcesando] = useState(false);
-  const [resultado, setResultado] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showExito, setShowExito] = useState(false);
+  const [exitoMsg, setExitoMsg] = useState('');
+  const [errorProceso, setErrorProceso] = useState('');
 
-  // ── Buscar venta ──
-  const buscarVenta = async () => {
-    const cod = codVentaInput.trim().toUpperCase();
-    if (!cod) return;
-    setLoadingVenta(true);
-    setErrorVenta('');
-    setVenta(null);
-    setItems([]);
-    setResultado(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    try {
-      const { data } = await api.get<VentaDetalle>(`/ventas/${cod}`);
-      setVenta(data);
+  const buscarVenta = async (val: string) => {
+    const cod = val.trim().toUpperCase();
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!cod) { setVenta(null); setItems([]); setErrorVenta(''); return; }
 
-      setItems(
-        data.items.map(it => ({
-          idFab: it.idFab,
-          codFab: it.codFab,
-          descPro: it.descPro,
-          cantidadVendida: Number(it.cantidad),
-          precioVenta: Number(it.precioVenta),
-          cantidadDevolver: 0,
-        })),
-      );
-    } catch (e: any) {
-      setErrorVenta(e?.response?.data?.message ?? 'Venta no encontrada.');
-    } finally {
-      setLoadingVenta(false);
-    }
+    debounce.current = setTimeout(async () => {
+      setLoadingVenta(true);
+      setErrorVenta('');
+      setVenta(null);
+      setItems([]);
+      setErrorProceso('');
+
+      try {
+        const { data } = await api.get<VentaDetalle>(`/ventas/${cod}`);
+        setVenta(data);
+        setItems(
+          data.items.map(it => ({
+            idFab: it.idFab,
+            codFab: it.codFab,
+            descPro: it.descPro,
+            cantidadVendida: Number(it.cantidad),
+            precioVenta: Number(it.precioVenta),
+            cantidadDevolver: 0,
+          })),
+        );
+      } catch (e: any) {
+        setErrorVenta(e?.response?.data?.message ?? 'Venta no encontrada.');
+      } finally {
+        setLoadingVenta(false);
+      }
+    }, 500);
   };
 
   const setCantidad = (idFab: number, val: number) => {
@@ -109,12 +139,17 @@ export function Devoluciones() {
   const totalDevolver = items.reduce((s, it) => s + it.cantidadDevolver * it.precioVenta, 0);
   const itemsSeleccionados = items.filter(it => it.cantidadDevolver > 0);
 
+  const abrirConfirm = () => {
+    if (!venta || itemsSeleccionados.length === 0) return;
+    setErrorProceso('');
+    setShowConfirm(true);
+  };
+
   const procesar = async () => {
     if (!venta || itemsSeleccionados.length === 0) return;
-    if (!window.confirm(`¿Confirmar devolución de ${itemsSeleccionados.length} producto(s) por ${fmtMoney(totalDevolver)}?`)) return;
-
+    setShowConfirm(false);
     setProcesando(true);
-    setResultado(null);
+    setErrorProceso('');
 
     try {
       await api.post('/devoluciones', {
@@ -128,11 +163,27 @@ export function Devoluciones() {
         })),
       });
 
-      setResultado({ ok: true, msg: `Devolución registrada correctamente. Se procesaron ${itemsSeleccionados.length} producto(s) por ${fmtMoney(totalDevolver)}.` });
-      setItems(prev => prev.map(it => ({ ...it, cantidadDevolver: 0 })));
+      setItems(prev =>
+        prev.map(it => ({
+          ...it,
+          cantidadVendida: it.cantidadVendida - it.cantidadDevolver,
+          cantidadDevolver: 0,
+        })),
+      );
+
+      setVenta(prev =>
+        prev
+          ? { ...prev, total: Number(prev.total) - totalDevolver }
+          : prev,
+      );
+
       setObs('');
+      setExitoMsg(
+        `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}.`,
+      );
+      setShowExito(true);
     } catch (e: any) {
-      setResultado({ ok: false, msg: e?.response?.data?.message ?? 'Error al procesar la devolución.' });
+      setErrorProceso(e?.response?.data?.message ?? 'Error al procesar la devolución.');
     } finally {
       setProcesando(false);
     }
@@ -143,12 +194,115 @@ export function Devoluciones() {
     setItems([]);
     setCodVentaInput('');
     setErrorVenta('');
-    setResultado(null);
+    setErrorProceso('');
     setObs('');
   };
 
-  return (
+  return(
     <div>
+      {}
+      {showConfirm &&(
+        <div style={overlayStyle} onClick={() => setShowConfirm(false)}>
+          <div style={modalStyle} onClick={e => e.stopPropagation()}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div
+                  style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    background: '#ffeaea', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <i className="ti ti-arrow-back-up" style={{ color: BRAND.red, fontSize: 20 }} />
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: BRAND.black }}>
+                  Confirmar devolución
+                </div>
+              </div>
+              <div style={{ fontSize: 14, color: BRAND.gray600, lineHeight: 1.6 }}>
+                ¿Querés realizar la siguiente devolución?
+              </div>
+            </div>
+
+            {}
+            <div
+              style={{
+                background: BRAND.gray50,
+                border: `1px solid ${BRAND.gray200}`,
+                borderRadius: 8,
+                padding: '12px 16px',
+                display: 'flex',
+                flexDirection: 'column' as const,
+                gap: 6,
+              }}
+            >
+              {itemsSeleccionados.map(it => (
+                <div key={it.idFab} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span style={{ color: BRAND.black, fontWeight: 600 }}>
+                    {it.descPro}
+                    <span style={{ fontWeight: 400, color: BRAND.gray600 }}> × {it.cantidadDevolver}</span>
+                  </span>
+                  <span style={{ fontWeight: 700, color: '#1a7a40' }}>
+                    {fmtMoney(it.cantidadDevolver * it.precioVenta)}
+                  </span>
+                </div>
+              ))}
+              <div
+                style={{
+                  borderTop: `1px solid ${BRAND.gray200}`,
+                  marginTop: 6,
+                  paddingTop: 8,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontWeight: 800,
+                  fontSize: 15,
+                }}
+              >
+                <span>Total a reembolsar</span>
+                <span style={{ color: '#1a7a40' }}>{fmtMoney(totalDevolver)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button style={btnStyle('secondary')} onClick={() => setShowConfirm(false)}>
+                No
+              </button>
+              <button style={btnStyle('primary')} onClick={procesar}>
+                <i className="ti ti-check" />
+                Sí, devolver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {}
+      {showExito && (
+        <div style={overlayStyle} onClick={() => setShowExito(false)}>
+          <div style={{ ...modalStyle, alignItems: 'center', textAlign: 'center' as const }} onClick={e => e.stopPropagation()}>
+            <div
+              style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: '#e6f9ee', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <i className="ti ti-circle-check" style={{ color: '#1a7a40', fontSize: 32 }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: BRAND.black, marginBottom: 6 }}>
+                Devolución realizada
+              </div>
+              <div style={{ fontSize: 14, color: BRAND.gray600, lineHeight: 1.6 }}>
+                {exitoMsg}
+              </div>
+            </div>
+            <button style={{ ...btnStyle('primary'), width: '100%', justifyContent: 'center' }} onClick={() => setShowExito(false)}>
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
       {}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>Devoluciones</div>
@@ -165,10 +319,19 @@ export function Devoluciones() {
             style={{ ...S.input, fontFamily: 'monospace', letterSpacing: 0.5 }}
             placeholder="Ej: 00011012026050001"
             value={codVentaInput}
-            onChange={e => setCodVentaInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && buscarVenta()}
+            onChange={e => { setCodVentaInput(e.target.value); buscarVenta(e.target.value); }}
           />
         </div>
+        {loadingVenta && (
+          <span style={{ fontSize: 12, color: BRAND.gray600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-loader-2" /> Buscando…
+          </span>
+        )}
+        {venta && (
+          <button style={btnStyle('secondary')} onClick={limpiar}>
+            <i className="ti ti-x" /> Limpiar
+          </button>
+        )}
       </div>
 
       {}
@@ -179,17 +342,9 @@ export function Devoluciones() {
       )}
 
       {}
-      {resultado && (
-        <div
-          style={{
-            ...S.card,
-            borderLeft: `4px solid ${resultado.ok ? '#1a7a40' : BRAND.red}`,
-            color: resultado.ok ? '#1a7a40' : BRAND.red,
-            display: 'flex', gap: 8, alignItems: 'center',
-          }}
-        >
-          <i className={`ti ${resultado.ok ? 'ti-circle-check' : 'ti-alert-circle'}`} />
-          {resultado.msg}
+      {errorProceso && (
+        <div style={{ ...S.card, borderLeft: `4px solid ${BRAND.red}`, color: BRAND.red, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <i className="ti ti-alert-circle" />{errorProceso}
         </div>
       )}
 
@@ -199,7 +354,7 @@ export function Devoluciones() {
           <div
             style={{
               ...S.card,
-              borderLeft: `4px solid ${venta.estado === 'A' ? BRAND.red : BRAND.red}`,
+              borderLeft: `4px solid ${BRAND.red}`,
               display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap',
             }}
           >
@@ -351,7 +506,6 @@ export function Devoluciones() {
                   Confirmar devolución
                 </div>
 
-                {}
                 <div
                   style={{
                     background: itemsSeleccionados.length > 0 ? '#e6f9ee' : BRAND.gray50,
@@ -378,7 +532,6 @@ export function Devoluciones() {
                   </div>
                 </div>
 
-                {}
                 <div style={S.formGroup}>
                   <label style={S.label}>Observación (opcional)</label>
                   <textarea
@@ -397,7 +550,7 @@ export function Devoluciones() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button
                     style={btnStyle('primary')}
-                    onClick={procesar}
+                    onClick={abrirConfirm}
                     disabled={procesando || itemsSeleccionados.length === 0}
                   >
                     <i className={`ti ${procesando ? 'ti-loader-2' : 'ti-arrow-back-up'}`} />

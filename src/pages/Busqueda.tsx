@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { Producto, AdvancedSearchParams } from '../types';
@@ -40,9 +40,23 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const [resumen, setResumen]             = useState<ResumenProducto | null>(null);
   const [loadingResumen, setLoadingResumen] = useState(false);
 
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (quickSearch) setQ(quickSearch);
   }, [quickSearch]);
+
+  useEffect(() => {
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!q.trim() && !codigo.trim()) {
+      setResults([]);
+      setTotal(0);
+      setSearched(false);
+      return;
+    }
+    debounce.current = setTimeout(() => { search(1); }, 350);
+    return () => { if (debounce.current) clearTimeout(debounce.current); };
+  }, [q, codigo]);
 
   const search = async (targetPage = 1) => {
     setLoading(true);
@@ -114,8 +128,16 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
               style={S.input}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && search()}
               placeholder="Buscar por nombre o descripción"
+            />
+          </div>
+          <div>
+            <label style={S.label}>Código de fábrica / barras</label>
+            <input
+              style={S.input}
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
+              placeholder="Código del producto"
             />
           </div>
         </div>

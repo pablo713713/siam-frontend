@@ -64,23 +64,24 @@ export function NuevaVenta() {
   const [msg, setMsg]                         = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
   const [expandedStock, setExpandedStock]     = useState<number | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceCliente = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flash = (text: string, type: 'ok' | 'err' = 'ok') => {
     setMsg({ text, type });
     setTimeout(() => setMsg(null), 5000);
   };
 
-  // ── Cliente ──
-  const buscarCliente = async () => {
-    if (!queryCliente.trim()) return;
+  const buscarCliente = async (val: string) => {
+    if (debounceCliente.current) clearTimeout(debounceCliente.current);
+    if (!val.trim()) { setClienteResults([]); return; }
     setLoadingCliente(true);
-    setClienteResults([]);
-    try {
-      const { data } = await api.get('/clientes/search', { params: { q: queryCliente.trim(), limit: 10 } });
-      setClienteResults(data.data ?? []);
-      if (!(data.data ?? []).length) flash('No se encontraron clientes.', 'err');
-    } catch { flash('Error al buscar clientes.', 'err'); }
-    finally { setLoadingCliente(false); }
+    debounceCliente.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/clientes/search', { params: { q: val.trim(), limit: 10 } });
+        setClienteResults(data.data ?? []);
+      } catch { setClienteResults([]); }
+      finally { setLoadingCliente(false); }
+    }, 400);
   };
 
   const seleccionarCliente = (c: ClienteVenta) => {
@@ -269,12 +270,14 @@ export function NuevaVenta() {
                 <input
                   style={S.input}
                   value={queryCliente}
-                  onChange={(e) => setQueryCliente(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && buscarCliente()}
+                  onChange={(e) => { setQueryCliente(e.target.value); buscarCliente(e.target.value); }}
                   placeholder="Ej: Juan, Pérez, Ferretería..."
                 />
               </div>
             </div>
+            {loadingCliente && (
+              <div style={{ padding: '8px 12px', fontSize: 12, color: BRAND.gray600 }}>Buscando…</div>
+            )}
             {clienteResults.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {clienteResults.map((c) => (
@@ -325,7 +328,7 @@ export function NuevaVenta() {
         )}
       </div>
 
-      {/* ── Buscador productos ── */}
+      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Agregar productos</div>
         <div style={{ position: 'relative' }}>
@@ -362,7 +365,7 @@ export function NuevaVenta() {
         </div>
       </div>
 
-      {/* ── Carrito ── */}
+      {}
       {carrito.length > 0 && (
         <div style={S.card}>
           <div style={S.cardTitle}>Carrito — Motor Zone</div>
@@ -508,7 +511,7 @@ export function NuevaVenta() {
         </div>
       )}
 
-      {/* ── Mensaje ── */}
+      {}
       {msg && (
         <div style={{
           padding: '10px 16px', borderRadius: 8, marginBottom: 16,
@@ -520,7 +523,7 @@ export function NuevaVenta() {
         </div>
       )}
 
-      {/* ── Botones ── */}
+      {}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
         <button style={btnStyle()} onClick={cancelarVenta} disabled={loading}>
           <i className="ti ti-x" /> Cancelar
