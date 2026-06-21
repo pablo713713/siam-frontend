@@ -327,14 +327,14 @@ export function VerVentas() {
             type="date"
             value={fecha}
             onChange={e => setFecha(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && cargar(1)}
             style={S.input}
           />
         </div>
-        <button style={btnStyle('primary')} onClick={() => cargar(1)} disabled={loading}>
-          <i className="ti ti-search" />
-          {loading ? 'Buscando…' : 'Buscar'}
-        </button>
+        {loading && (
+          <span style={{ fontSize: 12, color: BRAND.gray600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-loader-2" /> Buscando…
+          </span>
+        )}
         <button style={btnStyle('secondary')} onClick={() => { setFecha(todayISO()); }}>
           <i className="ti ti-calendar-today" />
           Hoy

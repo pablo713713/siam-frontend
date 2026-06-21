@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
@@ -91,33 +91,39 @@ export function Devoluciones() {
   const [exitoMsg, setExitoMsg] = useState('');
   const [errorProceso, setErrorProceso] = useState('');
 
-  const buscarVenta = async () =>{
-    const cod = codVentaInput.trim().toUpperCase();
-    if (!cod) return;
-    setLoadingVenta(true);
-    setErrorVenta('');
-    setVenta(null);
-    setItems([]);
-    setErrorProceso('');
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    try {
-      const { data } = await api.get<VentaDetalle>(`/ventas/${cod}`);
-      setVenta(data);
-      setItems(
-        data.items.map(it => ({
-          idFab: it.idFab,
-          codFab: it.codFab,
-          descPro: it.descPro,
-          cantidadVendida: Number(it.cantidad),
-          precioVenta: Number(it.precioVenta),
-          cantidadDevolver: 0,
-        })),
-      );
-    } catch (e: any) {
-      setErrorVenta(e?.response?.data?.message ?? 'Venta no encontrada.');
-    } finally {
-      setLoadingVenta(false);
-    }
+  const buscarVenta = async (val: string) => {
+    const cod = val.trim().toUpperCase();
+    if (debounce.current) clearTimeout(debounce.current);
+    if (!cod) { setVenta(null); setItems([]); setErrorVenta(''); return; }
+
+    debounce.current = setTimeout(async () => {
+      setLoadingVenta(true);
+      setErrorVenta('');
+      setVenta(null);
+      setItems([]);
+      setErrorProceso('');
+
+      try {
+        const { data } = await api.get<VentaDetalle>(`/ventas/${cod}`);
+        setVenta(data);
+        setItems(
+          data.items.map(it => ({
+            idFab: it.idFab,
+            codFab: it.codFab,
+            descPro: it.descPro,
+            cantidadVendida: Number(it.cantidad),
+            precioVenta: Number(it.precioVenta),
+            cantidadDevolver: 0,
+          })),
+        );
+      } catch (e: any) {
+        setErrorVenta(e?.response?.data?.message ?? 'Venta no encontrada.');
+      } finally {
+        setLoadingVenta(false);
+      }
+    }, 500);
   };
 
   const setCantidad = (idFab: number, val: number) => {
@@ -313,18 +319,14 @@ export function Devoluciones() {
             style={{ ...S.input, fontFamily: 'monospace', letterSpacing: 0.5 }}
             placeholder="Ej: 00011012026050001"
             value={codVentaInput}
-            onChange={e => setCodVentaInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && buscarVenta()}
+            onChange={e => { setCodVentaInput(e.target.value); buscarVenta(e.target.value); }}
           />
         </div>
-        <button
-          style={btnStyle('primary')}
-          onClick={buscarVenta}
-          disabled={loadingVenta}
-        >
-          <i className={`ti ${loadingVenta ? 'ti-loader-2' : 'ti-search'}`} />
-          {loadingVenta ? 'Buscando…' : 'Buscar'}
-        </button>
+        {loadingVenta && (
+          <span style={{ fontSize: 12, color: BRAND.gray600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-loader-2" /> Buscando…
+          </span>
+        )}
         {venta && (
           <button style={btnStyle('secondary')} onClick={limpiar}>
             <i className="ti ti-x" /> Limpiar
