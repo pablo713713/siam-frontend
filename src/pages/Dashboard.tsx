@@ -1,4 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer, Cell,
+} from 'recharts';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
@@ -32,6 +36,12 @@ function rangoDesdePreset(p: RangoPreset, custom?: Rango): Rango {
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB',
     minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+const fmtMoneyShort = (n: number) => {
+  if (n >= 1_000_000) return `Bs ${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000)     return `Bs ${(n / 1_000).toFixed(1)}K`;
+  return `Bs ${n.toFixed(0)}`;
+};
 
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -77,17 +87,164 @@ function MargenBar({ pct }: { pct: number }) {
   );
 }
 
+interface TooltipPayloadItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (!active || !payload || payload.length === 0) return null;
+  return (
+    <div className={css.chartTooltip}>
+      <div className={css.chartTooltipLabel}>{label}</div>
+      {payload.map((item) => (
+        <div key={item.name} className={css.chartTooltipRow}>
+          <span className={css.chartTooltipDot} style={{ background: item.color }} />
+          <span className={css.chartTooltipName}>{item.name}</span>
+          <span className={css.chartTooltipValue}>{fmtMoney(item.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface GananciaChartProps {
+  ganancia: GananciaResponse;
+  labelRango: string;
+}
+
+function GananciaChart({ ganancia, labelRango }: GananciaChartProps) {
+  const data = [
+    {
+      nombre: labelRango,
+      Ingresos: ganancia.ingresos_brutos,
+      Costos:   ganancia.costo_mercancia,
+      Ganancia: ganancia.ganancia_neta,
+    },
+  ];
+
+  const positivo = ganancia.ganancia_neta >= 0;
+
+  return (
+    <div style={S.card}>
+      <div className={css.cardTitleRow}>
+        <i className="ti ti-chart-bar" style={{ color: BRAND.red }} />
+        Grafico de Ganancias
+      </div>
+
+      <div className={css.chartLegend}>
+        <span className={css.chartLegendItem}>
+          <span className={css.chartLegendDot} style={{ background: BRAND.blue }} />
+          Ingresos
+        </span>
+        <span className={css.chartLegendItem}>
+          <span className={css.chartLegendDot} style={{ background: BRAND.red }} />
+          Costos
+        </span>
+        <span className={css.chartLegendItem}>
+          <span className={css.chartLegendDot} style={{ background: positivo ? BRAND.green : BRAND.amber }} />
+          Ganancia neta
+        </span>
+      </div>
+
+      <div className={css.chartWrap}>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 16, left: 8, bottom: 4 }}
+            barCategoryGap="30%"
+            barGap={6}
+          >
+            <CartesianGrid
+              vertical={false}
+              stroke={BRAND.gray200}
+              strokeDasharray="3 4"
+            />
+            <XAxis
+              dataKey="nombre"
+              tick={{ fontSize: 12, fill: BRAND.gray600, fontFamily: 'Barlow, sans-serif', fontWeight: 600 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tickFormatter={fmtMoneyShort}
+              tick={{ fontSize: 11, fill: BRAND.gray600, fontFamily: 'Barlow, sans-serif' }}
+              axisLine={false}
+              tickLine={false}
+              width={72}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: BRAND.gray100 }} />
+            <Legend hide />
+
+            <Bar dataKey="Ingresos" radius={[4, 4, 0, 0]} maxBarSize={72}>
+              <Cell fill={BRAND.blue} />
+            </Bar>
+            <Bar dataKey="Costos" radius={[4, 4, 0, 0]} maxBarSize={72}>
+              <Cell fill={BRAND.red} />
+            </Bar>
+            <Bar dataKey="Ganancia" radius={[4, 4, 0, 0]} maxBarSize={72}>
+              <Cell fill={positivo ? BRAND.green : BRAND.amber} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className={css.chartFooter}>
+        <div className={css.chartFooterItem}>
+          <span className={css.chartFooterLabel}>Ingresos brutos</span>
+          <span className={css.chartFooterValue} style={{ color: BRAND.blue }}>
+            {fmtMoney(ganancia.ingresos_brutos)}
+          </span>
+        </div>
+        <div className={css.chartFooterDivider} />
+        <div className={css.chartFooterItem}>
+          <span className={css.chartFooterLabel}>Costo de mercancia</span>
+          <span className={css.chartFooterValue} style={{ color: BRAND.red }}>
+            -{fmtMoney(ganancia.costo_mercancia)}
+          </span>
+        </div>
+        <div className={css.chartFooterDivider} />
+        <div className={css.chartFooterItem}>
+          <span className={css.chartFooterLabel}>Ganancia neta</span>
+          <span
+            className={css.chartFooterValue}
+            style={{ color: positivo ? BRAND.green : BRAND.amber }}
+          >
+            {fmtMoney(ganancia.ganancia_neta)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard() {
   const { usuario } = useAuth();
-  const [preset, setPreset]         = useState<RangoPreset>('mes');
+  const [preset, setPreset]           = useState<RangoPreset>('mes');
   const [customRango, setCustomRango] = useState<Rango>({ fecha_inicio: inicioMes(), fecha_fin: hoy() });
-  const [showCustom, setShowCustom] = useState(false);
-  const [ingresos, setIngresos]     = useState<IngresosResponse | null>(null);
-  const [ganancia, setGanancia]     = useState<GananciaResponse | null>(null);
-  const [loading, setLoading]       = useState(false);
-  const [kpiError, setKpiError]     = useState<string | null>(null);
+  const [showCustom, setShowCustom]   = useState(false);
+  const [ingresos, setIngresos]       = useState<IngresosResponse | null>(null);
+  const [ganancia, setGanancia]       = useState<GananciaResponse | null>(null);
+  const [loading, setLoading]         = useState(false);
+  const [kpiError, setKpiError]       = useState<string | null>(null);
 
   const rango = rangoDesdePreset(preset, customRango);
+
+  const labelRango = (() => {
+    switch (preset) {
+      case 'hoy':    return 'Hoy';
+      case '7dias':  return 'Ultimos 7 dias';
+      case 'mes':    return 'Este mes';
+      case 'custom': return `${fmtDate(rango.fecha_inicio)} - ${fmtDate(rango.fecha_fin)}`;
+    }
+  })();
 
   const fetchKpis = useCallback(async () => {
     setLoading(true); setIngresos(null); setGanancia(null); setKpiError(null);
@@ -121,7 +278,6 @@ export function Dashboard() {
 
   return (
     <div className={css.page}>
-      {}
       {kpiError && (
         <div role="alert" style={S.errorBanner}>
           <i className="ti ti-alert-circle" aria-hidden="true" />
@@ -129,7 +285,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {}
       <div className={css.header}>
         <div className={css.headerLeft}>
           <h1 className={css.title}>Bienvenido, {usuario?.nombre}</h1>
@@ -137,7 +292,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {}
       <div style={S.card}>
         <div className={css.cardTitleRow}>
           <i className="ti ti-calendar" style={{ color: BRAND.red }} />
@@ -193,7 +347,6 @@ export function Dashboard() {
         </p>
       </div>
 
-      {}
       <div className={css.kpiGrid}>
         <KpiCard icon="ti-cash"        label="Ingresos Totales"   loading={loading}
           value={ingresos ? fmtMoney(ingresos.total_bruto) : '—'}
@@ -217,7 +370,10 @@ export function Dashboard() {
         />
       </div>
 
-      {}
+      {ganancia && !loading && (
+        <GananciaChart ganancia={ganancia} labelRango={labelRango} />
+      )}
+
       {ganancia && !loading && (
         <div style={S.card}>
           <div className={css.cardTitleRow}>
@@ -249,7 +405,6 @@ export function Dashboard() {
         </div>
       )}
 
-      {}
       <div style={S.card}>
         <div style={S.cardTitle}>Informacion de sesion</div>
         <table style={S.table}>

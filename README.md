@@ -90,6 +90,16 @@ Si el login redirige al dashboard, todo está funcionando.
 
 ---
 
+## Paso 6 — Instalación para ver gráficas
+
+Ejecutar una sola vez en la raíz del proyecto:
+
+```powershell
+pnpm install recharts
+```
+
+---
+
 ## Scripts disponibles
 
 ```powershell
