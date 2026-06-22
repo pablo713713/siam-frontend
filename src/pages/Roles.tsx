@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
+import { S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { Rol, CreateRolDto } from '../types';
+import css from './Roles.module.css';
 
 export function Roles() {
   const [roles, setRoles]       = useState<Rol[]>([]);
@@ -21,7 +22,8 @@ export function Roles() {
     setLoading(true);
     try {
       const { data } = await api.get<Rol[]>('/roles');
-      setRoles(Array.isArray(data) ? data : []);    } catch {
+      setRoles(Array.isArray(data) ? data : []);
+    } catch {
       setRoles([]);
     } finally {
       setLoading(false);
@@ -46,19 +48,15 @@ export function Roles() {
       resetForm();
       load();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      flash(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Error al guardar.', 'err');
+      const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      flash(Array.isArray(m) ? m.join(', ') : m ?? 'Error al guardar.', 'err');
     }
   };
 
-  const startEdit = (r: Rol) => {
-    setEditId(r.id);
-    setNombre(r.nombre);
-    setDesc(r.descripcion ?? '');
-  };
+  const startEdit = (r: Rol) => { setEditId(r.id); setNombre(r.nombre); setDesc(r.descripcion ?? ''); };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Eliminar este rol?')) return;
+    if (!confirm('Eliminar este rol?')) return;
     setDeleting(id);
     try {
       await api.delete(`/roles/${id}`);
@@ -72,120 +70,110 @@ export function Roles() {
   };
 
   return (
-    <div>
+    <div className={css.page}>
       {}
-      {/* <div style={S.card}>
-        <div style={S.cardTitle}>{editId !== null ? 'Editar Rol' : 'Crear Nuevo Rol'}</div>
+      <div className={css.header}>
+        <div>
+          <h1 className={css.title}>Roles del sistema</h1>
+          <p className={css.subtitle}>Administra los roles y permisos de acceso</p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr auto',
-            gap: 12, alignItems: 'flex-end',
-          }}>
-            <div>
-              <label style={S.label}>Nombre del rol *</label>
-              <input
-                style={S.input}
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder=""
-                required
-                maxLength={50}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Descripción</label>
-              <input
-                style={S.input}
-                value={descripcion}
-                onChange={(e) => setDesc(e.target.value)}
-                placeholder="Descripción opcional"
-                maxLength={200}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button style={btnStyle('primary')} type="submit">
-                <i className={`ti ${editId !== null ? 'ti-check' : 'ti-plus'}`} aria-hidden="true" />
-                {editId !== null ? 'Actualizar' : 'Crear'}
-              </button>
-              {editId !== null && (
-                <button style={btnStyle()} type="button" onClick={resetForm}>
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </div>
-        </form>
+      {}
+      <div className={css.formCard}>
+        <div className={css.formTitle}>
+          <i className="ti ti-shield-lock" style={{ color: '#D72626' }} aria-hidden="true" />
+          {editId !== null ? 'Editar rol' : 'Crear nuevo rol'}
+        </div>
 
         {msg && (
-          <div style={{
-            marginTop: 10, fontSize: 12, padding: '8px 12px', borderRadius: 6,
-            background: msg.type === 'ok' ? '#e6f9ee' : '#ffeaea',
-            color: msg.type === 'ok' ? '#1a7a40' : BRAND.red,
-            border: `1px solid ${msg.type === 'ok' ? '#b0e4c2' : '#f5b8b8'}`,
-          }}>
+          <div className={`${css.banner} ${msg.type === 'ok' ? css.bannerOk : css.bannerErr}`} role="alert">
+            <i className={`ti ${msg.type === 'ok' ? 'ti-check' : 'ti-alert-circle'}`} aria-hidden="true" />
             {msg.text}
           </div>
         )}
-      </div> */}
+
+        <form onSubmit={handleSubmit}>
+          <div className={css.formGrid}>
+            <div style={S.formGroup}>
+              <label style={S.label} htmlFor="rol-nombre">Nombre del rol *</label>
+              <input id="rol-nombre" style={S.input}
+                value={nombre} onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej. Supervisor" required maxLength={50}
+              />
+            </div>
+            <div style={S.formGroup}>
+              <label style={S.label} htmlFor="rol-desc">Descripcion</label>
+              <input id="rol-desc" style={S.input}
+                value={descripcion} onChange={(e) => setDesc(e.target.value)}
+                placeholder="Descripcion opcional" maxLength={200}
+              />
+            </div>
+          </div>
+          <div className={css.formActions}>
+            <button style={btnStyle('primary')} type="submit">
+              <i className={`ti ${editId !== null ? 'ti-check' : 'ti-plus'}`} aria-hidden="true" />
+              {editId !== null ? 'Actualizar' : 'Crear rol'}
+            </button>
+            {editId !== null && (
+              <button style={btnStyle('ghost')} type="button" onClick={resetForm}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
 
       {}
-      <div style={S.card}>
-        <div style={S.cardTitle}>Roles del sistema</div>
-
+      <div className={css.tableCard}>
         {loading ? (
-          <div style={{ color: BRAND.gray600, fontSize: 13 }}>Cargando…</div>
+          <div className={css.loadingWrap}>Cargando...</div>
         ) : (
-          <table style={S.table}>
-            <thead>
-              <tr>
-                <th style={S.th}>ID</th>
-                <th style={S.th}>Nombre</th>
-                <th style={S.th}>Descripción</th>
-                <th style={S.th}>Estado</th>
-                <th style={S.th}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.length === 0 ? (
+          <div className={css.tableWrap}>
+            <table style={S.table}>
+              <thead>
                 <tr>
-                  <td colSpan={5} style={{ ...S.td, textAlign: 'center', color: BRAND.gray600 }}>
-                    Sin roles registrados
-                  </td>
+                  <th style={S.th}>ID</th>
+                  <th style={S.th}>Nombre</th>
+                  <th style={S.th}>Descripcion</th>
+                  <th style={S.th}>Estado</th>
+                  <th style={S.th}>Acciones</th>
                 </tr>
-              ) : roles.map((r) => (
-                <tr key={r.id}>
-                  <td style={{ ...S.td, color: BRAND.gray600, fontSize: 12 }}>{r.id}</td>
-                  <td style={{ ...S.td, fontWeight: 600 }}>{r.nombre}</td>
-                  <td style={{ ...S.td, color: BRAND.gray600 }}>{r.descripcion ?? '—'}</td>
-                  <td style={S.td}>
-                    <span style={badgeStyle(r.activo ? 'green' : 'red')}>
-                      {r.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td style={S.td}>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        style={{ ...btnStyle(), padding: '5px 12px' }}
-                        onClick={() => startEdit(r)}
-                      >
-                        <i className="ti ti-edit" style={{ fontSize: 13 }} aria-hidden="true" /> Editar
-                      </button>
-                      <button
-                        style={{ ...btnStyle('danger'), padding: '5px 12px' }}
-                        onClick={() => handleDelete(r.id)}
-                        disabled={deleting === r.id}
-                      >
-                        <i className="ti ti-trash" style={{ fontSize: 13 }} aria-hidden="true" />
-                        {deleting === r.id ? '…' : 'Eliminar'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {roles.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ ...S.td, ...S.emptyState }}>
+                      Sin roles registrados
+                    </td>
+                  </tr>
+                ) : roles.map((r) => (
+                  <tr key={r.id} className={css.tableRow}>
+                    <td style={{ ...S.td, color: '#666', fontSize: 12 }}>{r.id}</td>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{r.nombre}</td>
+                    <td style={{ ...S.td, color: '#666' }}>{r.descripcion ?? '—'}</td>
+                    <td style={S.td}>
+                      <span style={badgeStyle(r.activo ? 'green' : 'red')}>
+                        {r.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td style={S.td}>
+                      <div className={css.actionCell}>
+                        <button style={btnStyle('secondary', 'sm')} onClick={() => startEdit(r)}>
+                          <i className="ti ti-edit" aria-hidden="true" /> Editar
+                        </button>
+                        <button style={btnStyle('danger', 'sm')} onClick={() => handleDelete(r.id)}
+                          disabled={deleting === r.id}>
+                          <i className="ti ti-trash" aria-hidden="true" />
+                          {deleting === r.id ? '...' : 'Eliminar'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

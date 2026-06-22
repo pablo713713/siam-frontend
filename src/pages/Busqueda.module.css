@@ -1,0 +1,175 @@
+.page {}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 3px;
+}
+
+.filtersCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.filtersRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.filterLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666666;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.filterActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.resultsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #666666;
+}
+
+.resultsCount {
+  font-weight: 700;
+  color: #111111;
+}
+
+.tableCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.tableRow:hover td {
+  background: #F6F6F6;
+}
+
+.tableRowSelected td {
+  background: #ffeaea;
+}
+
+.detailPanel {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detailTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111111;
+  flex: 1;
+}
+
+.stockGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.stockItem {
+  background: #F6F6F6;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stockSuc {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 4px;
+}
+
+.stockQty {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.stockDays {
+  font-size: 11px;
+  color: #AAAAAA;
+  margin-top: 2px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 48px 24px;
+  color: #AAAAAA;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.emptyText {
+  font-size: 14px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid #F0F0F0;
+}
