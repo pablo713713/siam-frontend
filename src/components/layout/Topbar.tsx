@@ -1,15 +1,20 @@
 import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { BRAND } from '../ui/tokens';
 import api from '../../api/axios';
 import type { Producto } from '../../types';
+import css from './Topbar.module.css';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/dashboard':   'Dashboard',
-  '/roles':       'Gestión de Roles',
-  '/asignar-rol': 'Asignación de Roles',
-  '/busqueda':    'Búsqueda de Productos',
+  '/roles':       'Gestion de Roles',
+  '/asignar-rol': 'Asignacion de Roles',
+  '/busqueda':    'Busqueda de Productos',
+  '/clientes':    'Gestion de Clientes',
+  '/ventas/nueva':'Nueva Venta',
+  '/ventas':      'Ver Ventas',
+  '/devoluciones':'Devoluciones',
+  '/tipo-cambio': 'Tipo de Cambio',
 };
 
 interface TopbarProps {
@@ -17,7 +22,7 @@ interface TopbarProps {
 }
 
 export function Topbar({ onQuickSearch }: TopbarProps) {
-  const { usuario,logout } = useAuth();
+  const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -29,9 +34,7 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
 
   const handleChange = (val: string) => {
     setQuery(val);
-    if (debounce.current) {
-      clearTimeout(debounce.current);
-    }
+    if (debounce.current) clearTimeout(debounce.current);
     if (!val.trim()) { setResults([]); setShowDrop(false); return; }
     setSearching(true);
     debounce.current = setTimeout(async () => {
@@ -59,78 +62,45 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
     ? `${usuario.nombre?.[0] ?? ''}${usuario.apellido?.[0] ?? ''}`.toUpperCase()
     : '?';
 
-  return (
-    <header style={{
-      background: BRAND.white,
-      borderBottom: `1px solid ${BRAND.gray200}`,
-      padding: '0 24px', height: 56,
-      display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0,
-    }}>
-      {/* Título de sección actual */}
-      <span style={{ fontSize: 15, fontWeight: 700, color: BRAND.black, letterSpacing: 0.5, flex: 1 }}>
-        {ROUTE_LABELS[pathname] ?? 'SIAM'}
-      </span>
+  const pageLabel = ROUTE_LABELS[pathname] ?? pathname.split('/').filter(Boolean).pop() ?? 'SIAM';
 
-      {/* ── Búsqueda rápida (HU-F3.01) ── */}
-      <div style={{ position: 'relative', width: 280 }}>
-        <i className="ti ti-search" aria-hidden="true" style={{
-          position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-          color: BRAND.gray400, fontSize: 15, pointerEvents: 'none',
-        }} />
+  return (
+    <header className={css.topbar}>
+      <span className={css.pageTitle}>{pageLabel}</span>
+
+      {}
+      <div className={css.searchWrap}>
+        <i className={`ti ti-search ${css.searchIcon}`} aria-hidden="true" />
         <input
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => results.length > 0 && setShowDrop(true)}
           onBlur={() => setTimeout(() => setShowDrop(false), 200)}
           onKeyDown={(e) => e.key === 'Enter' && goToAdvanced()}
-          placeholder="Buscar producto…"
-          style={{
-            width: '100%', padding: '8px 12px 8px 34px',
-            border: `1px solid ${BRAND.gray200}`, borderRadius: 6,
-            fontSize: 13, background: BRAND.gray50, outline: 'none',
-            color: BRAND.black, boxSizing: 'border-box',
-          }}
+          placeholder="Buscar producto..."
+          className={css.searchInput}
+          aria-label="Busqueda rapida"
         />
 
-        {}
         {showDrop && (
-          <div style={{
-            position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-            background: BRAND.white, border: `1px solid ${BRAND.gray200}`,
-            borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
-            zIndex: 200, maxHeight: 320, overflowY: 'auto',
-          }}>
+          <div className={css.dropdown}>
             {searching && (
-              <div style={{ padding: 12, color: BRAND.gray600, fontSize: 13 }}>Buscando…</div>
+              <div className={css.dropdownMsg}>Buscando...</div>
             )}
             {!searching && results.length === 0 && (
-              <div style={{ padding: 12, color: BRAND.gray600, fontSize: 13 }}>Sin resultados</div>
+              <div className={css.dropdownMsg}>Sin resultados</div>
             )}
             {!searching && results.map((p) => (
-              <div
-                key={p.id}
-                onClick={goToAdvanced}
-                style={{
-                  padding: '10px 14px', cursor: 'pointer',
-                  borderBottom: `1px solid ${BRAND.gray200}`,
-                  display: 'flex', flexDirection: 'column', gap: 2,
-                }}
-              >
-                <span style={{ fontWeight: 600, fontSize: 13 }}>{p.descPro}</span>
-                <span style={{ fontSize: 11, color: BRAND.gray600 }}>
-                  Cód: {p.codPro ?? '—'} | Fab: {p.codigo ?? '—'}
+              <div key={p.id} onClick={goToAdvanced} className={css.dropdownItem}>
+                <span className={css.dropdownItemName}>{p.descPro}</span>
+                <span className={css.dropdownItemMeta}>
+                  Cod: {p.codPro ?? '—'} | Fab: {p.codigo ?? '—'}
                 </span>
               </div>
             ))}
             {results.length > 0 && (
-              <div
-                onClick={goToAdvanced}
-                style={{
-                  padding: '8px 14px', fontSize: 12,
-                  color: BRAND.red, cursor: 'pointer', fontWeight: 600,
-                }}
-              >
-                Ver todos los resultados →
+              <div onClick={goToAdvanced} className={css.dropdownMore}>
+                Ver todos los resultados
               </div>
             )}
           </div>
@@ -138,40 +108,15 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
       </div>
 
       {}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: '50%', background: BRAND.red,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: BRAND.white, fontWeight: 700, fontSize: 12,
-        }}>
-          {initials}
-        </div>
-        <span style={{ fontSize: 13, fontWeight: 600, color: BRAND.black }}>
-          {usuario?.alias}
-        </span>
+      <div className={css.userArea}>
+        <div className={css.avatar}>{initials}</div>
+        <span className={css.userName}>{usuario?.alias}</span>
         <button
           onClick={() => { logout(); navigate('/login'); }}
-          title="Cerrar sesión"
-          aria-label="Cerrar sesión"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 32, height: 32, borderRadius: 6,
-            border: `1px solid ${BRAND.gray200}`,
-            background: 'transparent', cursor: 'pointer',
-            color: BRAND.gray600, transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.red;
-            (e.currentTarget as HTMLButtonElement).style.color = BRAND.red;
-            (e.currentTarget as HTMLButtonElement).style.background = '#ffeaea';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = BRAND.gray200;
-            (e.currentTarget as HTMLButtonElement).style.color = BRAND.gray600;
-            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-          }}
+          title="Cerrar sesion"
+          aria-label="Cerrar sesion"
+          className={css.logoutBtn}
         >
-          {}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             aria-hidden="true">

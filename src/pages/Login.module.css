@@ -1,0 +1,145 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111111;
+  font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar {
+  position: absolute;
+  bottom: 0;
+  width: 6px;
+  background: #D72626;
+  border-radius: 2px 2px 0 0;
+}
+
+.card {
+  width: 400px;
+  background: #1a1a1a;
+  border-radius: 14px;
+  padding: 40px 36px;
+  border: 1px solid #2a2a2a;
+  position: relative;
+  z-index: 1;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.logoBars {
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.logoBar {
+  width: 4px;
+  background: #D72626;
+  border-radius: 1px;
+}
+
+.logoText {
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.logoFull {
+  color: #555555;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.tagline {
+  color: #555555;
+  font-size: 12px;
+  margin-bottom: 28px;
+}
+
+.formGroup {
+  margin-bottom: 14px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888888;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  background: #111111;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  color: #FFFFFF;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: #D72626;
+}
+
+.input::placeholder {
+  color: #444444;
+}
+
+/* Error */
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #D72626;
+  font-size: 12px;
+  margin-bottom: 12px;
+  background: #2a0000;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border: 1px solid #5a1111;
+}
+
+.submitWrap {
+  margin-top: 20px;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 12px;
+  background: #D72626;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.submitBtn:disabled {
+  background: #8a1515;
+  cursor: not-allowed;
+}

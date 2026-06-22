@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, cloneElement, isValidElement } from 'react';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import css from './MainLayout.module.css';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -9,30 +10,23 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [quickSearch, setQuickSearch] = useState('');
 
-  const childWithProps = typeof children === 'object' && children !== null
-    ? cloneWithQuickSearch(children as React.ReactElement, quickSearch, setQuickSearch)
-    : children;
+  const childWithProps =
+    typeof children === 'object' && children !== null
+      ? cloneWithQuickSearch(children as React.ReactElement, quickSearch, setQuickSearch)
+      : children;
 
   return (
-    <div style={{
-      display: 'flex', height: '100vh',
-      fontFamily: "'Barlow', 'Helvetica Neue', Arial, sans-serif",
-      background: '#F6F6F6', overflow: 'hidden',
-    }}>
+    <div className={css.shell}>
       <Sidebar />
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className={css.content}>
         <Topbar onQuickSearch={(q) => setQuickSearch(q)} />
-
-        <main style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        <main className={css.main}>
           {childWithProps}
         </main>
       </div>
     </div>
   );
 }
-
-import { cloneElement, isValidElement } from 'react';
 
 function cloneWithQuickSearch(
   child: React.ReactElement,

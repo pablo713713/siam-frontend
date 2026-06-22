@@ -1,0 +1,113 @@
+.page {}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111111;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 3px;
+}
+
+.formCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.formTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111111;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #F0F0F0;
+}
+
+/* Banner */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.bannerOk {
+  background: #e6f9ee;
+  border: 1px solid #a3dab8;
+  color: #1a7a40;
+}
+
+.bannerErr {
+  background: #ffeaea;
+  border: 1px solid #fbc9c9;
+  color: #B31F1F;
+}
+
+.tableCard {
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.tableRow:hover td {
+  background: #F6F6F6;
+}
+
+.actionCell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.loadingWrap {
+  padding: 40px;
+  text-align: center;
+  color: #AAAAAA;
+  font-size: 13px;
+}
