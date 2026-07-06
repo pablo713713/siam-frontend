@@ -146,6 +146,7 @@ export interface IngresosResponse {
   ventas_contado: { total: number; cantidad: number };
   ventas_credito: { total: number; cantidad: number };
   total_bruto: number;
+  total_devoluciones: number;
 }
 
 export interface GananciaResponse {

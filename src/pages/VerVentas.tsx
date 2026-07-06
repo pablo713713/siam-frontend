@@ -20,10 +20,14 @@ interface VentaDetalle extends VentaResumen {
   obs: string | null;
   codCli: number | null;
   numCiNit: string | null;
+  totalOriginal?: number; // <-- Nuevo
+  totalDevuelto?: number;   // <-- Nuevo
   items: {
     idFab: number;
     codFab: string;
-    cantidad: number;
+    cantidadOriginal: number; // <-- Nuevo: Cantidad comprada inicialmente
+    cantidadDevuelta: number; // <-- Nuevo: Cantidad devuelta acumulada
+    cantidad: number;         // Cantidad neta restante
     precioVenta: number;
     precLista: number;
     descuento: number;
@@ -351,26 +355,95 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
                       </tr>
                     </thead>
                     <tbody>
-                      {detalle.items.map((it, i) => (
-                        <tr key={`${it.idFab}-${i}`} style={{ background: i % 2 === 0 ? BRAND.white : BRAND.gray50 }}>
-                          <td style={S.td}>
-                            <div style={{ fontWeight: 600, fontSize: 13 }}>{it.descPro}</div>
-                            <div style={{ fontSize: 11, color: BRAND.gray600, fontFamily: 'monospace' }}>{it.codFab}</div>
-                          </td>
-                          <td style={{ ...S.td, textAlign: 'center' as const }}>{it.cantidad}</td>
-                          <td style={{ ...S.td, textAlign: 'right' as const }}>{fmtMoney(it.precioVenta)}</td>
-                          <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>{fmtMoney(it.cantidad * it.precioVenta)}</td>
-                        </tr>
-                      ))}
+                      {detalle.items.map((it, i) => {
+                        const tieneDevolucion = it.cantidadDevuelta > 0;
+                        const esTotalmenteDevuelto = it.cantidad === 0;
+
+                        return (
+                          <tr 
+                            key={`${it.idFab}-${i}`} 
+                            style={{ 
+                              background: i % 2 === 0 ? BRAND.white : BRAND.gray50,
+                              opacity: esTotalmenteDevuelto ? 0.6 : 1 // Apaga la fila si ya se devolvió todo
+                            }}
+                          >
+                            <td style={S.td}>
+                              <div style={{ fontWeight: 600, fontSize: 13 }}>
+                                {it.descPro} 
+                                {esTotalmenteDevuelto && (
+                                  <span style={{ ...badgeStyle('red'), marginLeft: 6, fontSize: 10 }}>Totalmente Devuelto</span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 11, color: BRAND.gray600, fontFamily: 'monospace' }}>{it.codFab}</div>
+                            </td>
+                            
+                            {/* Cantidad Dinámica */}
+                            <td style={{ ...S.td, textAlign: 'center' as const }}>
+                              {tieneDevolucion ? (
+                                <div>
+                                  <span style={{ textDecoration: 'line-through', color: BRAND.gray400, marginRight: 4, fontSize: 11 }}>
+                                    {it.cantidadOriginal}
+                                  </span>
+                                  <span style={{ fontWeight: 700, color: esTotalmenteDevuelto ? BRAND.red : BRAND.black }}>
+                                    {it.cantidad}
+                                  </span>
+                                  <div style={{ fontSize: 10, color: BRAND.red, marginTop: 2 }}>
+                                    (-{it.cantidadDevuelta} dev.)
+                                  </div>
+                                </div>
+                              ) : (
+                                it.cantidad
+                              )}
+                            </td>
+
+                            <td style={{ ...S.td, textAlign: 'right' as const }}>{fmtMoney(it.precioVenta)}</td>
+                            
+                            {/* Subtotal Neto */}
+                            <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>
+                              {tieneDevolucion && (
+                                <div style={{ textDecoration: 'line-through', color: BRAND.gray400, fontSize: 11, fontWeight: 400 }}>
+                                  {fmtMoney(it.cantidadOriginal * it.precioVenta)}
+                                </div>
+                              )}
+                              <span style={{ color: esTotalmenteDevuelto ? BRAND.gray400 : BRAND.black }}>
+                                {fmtMoney(it.cantidad * it.precioVenta)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, padding: '14px 16px', background: BRAND.black, borderRadius: 8 }}>
-                <span style={{ color: BRAND.gray400, fontSize: 13, fontWeight: 600 }}>TOTAL</span>
-                <span style={{ color: BRAND.white, fontSize: 22, fontWeight: 800 }}>{fmtMoney(Number(detalle.total))}</span>
-              </div>
+              {/* Sección de Totales Informativos */}
+              {Number(detalle.totalDevuelto) > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 16px', background: BRAND.gray50, borderRadius: '8px 8px 0 0', border: `1px solid ${BRAND.gray200}`, borderBottom: 'none', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: BRAND.gray600 }}>
+                    <span>Monto original de venta:</span>
+                    <span>{fmtMoney(Number(detalle.totalOriginal))}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: BRAND.red, fontWeight: 600 }}>
+                    <span>Crédito devuelto acumulado:</span>
+                    <span>-{fmtMoney(Number(detalle.totalDevuelto))}</span>
+                  </div>
+                </div>
+              )}
+
+{/* Bloque Total Neto Principal */}
+<div style={{ 
+  display: 'flex', 
+  justifyContent: 'flex-end', 
+  alignItems: 'center', 
+  gap: 16, 
+  padding: '14px 16px', 
+  background: BRAND.black, 
+  borderRadius: Number(detalle.totalDevuelto) > 0 ? '0 0 8px 8px' : '8px' 
+}}>
+  <span style={{ color: BRAND.gray400, fontSize: 13, fontWeight: 600 }}>TOTAL NETO</span>
+  <span style={{ color: BRAND.white, fontSize: 22, fontWeight: 800 }}>{fmtMoney(Number(detalle.total))}</span>
+</div>
 
               {detalle.estado !== 'A' && (
                 <div style={{ marginTop: 20 }}>
