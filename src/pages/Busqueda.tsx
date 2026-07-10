@@ -187,10 +187,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                               }}>
                               <i className="ti ti-shopping-cart" aria-hidden="true" /> Venta
                             </button>
-                            <button style={btnStyle('secondary', 'sm')}
-                              onClick={(e) => { e.stopPropagation(); navigate(`/productos/${p.id}/kardex`); }}>
-                              <i className="ti ti-list" aria-hidden="true" /> Kardex
-                            </button>
                           </div>
                         </td>
                       </tr>

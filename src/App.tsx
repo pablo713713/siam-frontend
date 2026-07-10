@@ -12,6 +12,7 @@ import { PerfilCliente }   from './pages/PerfilCliente';
 import { useAuth } from './context/AuthContext';
 import { NuevaVenta } from './pages/NuevaVenta';
 import { KardexProducto } from './pages/KardexProducto';
+import { Kardex } from './pages/Kardex';
 import { TipoCambio } from './pages/TipoCambio';
 import { VerVentas } from './pages/VerVentas';
 import { Devoluciones } from './pages/Devoluciones';
@@ -39,6 +40,7 @@ export default function App() {
 
           {/* Inventario */}
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
+          <Route path="/kardex" element={<PrivateRoute><MainLayout><Kardex /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />
 

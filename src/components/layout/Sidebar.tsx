@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { icon: 'ti-currency-dollar',  label: 'Tipo de Cambio',    to: '/tipo-cambio',  requiredRole: 'Administrador' },
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Busqueda Avanzada', to: '/busqueda'      },
+  { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },
   { section: 'Clientes' },
   { icon: 'ti-users',            label: 'Gestion de Clientes', to: '/clientes'    },
   { section: 'Ventas' },
