@@ -104,13 +104,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
               placeholder="Buscar por nombre o descripcion"
             />
           </div>
-          <div className={css.filterGroup}>
-            <label className={css.filterLabel} htmlFor="search-cod">Codigo de fabrica / barras</label>
-            <input id="search-cod" style={S.input} value={codigo}
-              onChange={(e) => setCodigo(e.target.value)}
-              placeholder="Codigo del producto"
-            />
-          </div>
           <div className={css.filterActions}>
             {(q || codigo) && (
               <button style={btnStyle('ghost')} onClick={clear}>
@@ -187,7 +180,11 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                         <td style={S.td} onClick={(e) => e.stopPropagation()}>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap' }}>
                             <button style={btnStyle('secondary', 'sm')}
-                              onClick={(e) => { e.stopPropagation(); navigate('/ventas/nueva'); }}>
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                localStorage.setItem('siam_producto_pendiente', JSON.stringify(p));
+                                navigate('/ventas/nueva');
+                              }}>
                               <i className="ti ti-shopping-cart" aria-hidden="true" /> Venta
                             </button>
                             <button style={btnStyle('secondary', 'sm')}

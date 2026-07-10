@@ -53,6 +53,34 @@ export function NuevaVenta() {
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(carrito)); }, [carrito]);
   useEffect(() => { localStorage.setItem(STORAGE_CLI, JSON.stringify(clienteSel)); }, [clienteSel]);
+  useEffect(() => {
+  const pendiente = localStorage.getItem('siam_producto_pendiente');
+  if (!pendiente) return;
+  localStorage.removeItem('siam_producto_pendiente');
+
+  const p: Producto = JSON.parse(pendiente);
+  if (!p.idFab || !p.plisPro) return;
+  if (carrito.find((i) => i.idFab === p.idFab)) return;
+
+  api.get<StockFab>(`/productos/stock-fab/${p.idFab}`).then(({ data }) => {
+    const distribucion: DistribItem[] = data.stockMotorZone > 0
+      ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: 1 }]
+      : [];
+
+    setCarrito((prev) => [...prev, {
+      idFab: p.idFab!,
+      codFab: p.codFab ?? '',
+      descPro: p.descPro,
+      cantidad: 1,
+      precioUnitario: p.plisPro!,
+      importe: p.plisPro!,
+      stockMotorZone: data.stockMotorZone,
+      totalStock: data.totalStock,
+      stockPorAlmacen: data.porAlmacen,
+      distribucion,
+    }]);
+  }).catch(() => {});
+}, []);
 
   const [queryCliente, setQueryCliente]       = useState('');
   const [clienteResults, setClienteResults]   = useState<ClienteVenta[]>([]);
