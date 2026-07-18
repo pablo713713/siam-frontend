@@ -145,7 +145,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                 <table style={S.table}>
                   <thead>
                     <tr>
-                      <th style={S.th}>Cod. SIAM</th>
                       <th style={S.th}>Cod. Fabrica</th>
                       <th style={S.th}>Marca</th>
                       <th style={S.th}>Descripcion</th>
@@ -164,7 +163,6 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                         onClick={() => seleccionarProducto(p)}
                         className={`${css.tableRow} ${productoSel?.id === p.id ? css.tableRowSelected : ''}`}
                       >
-                        <td style={{ ...S.td, fontSize: 12, color: BRAND.gray600 }}>{p.codPro ?? '—'}</td>
                         <td style={{ ...S.td, fontSize: 12 }}>{p.codFab ?? '—'}</td>
                         <td style={S.td}>{p.marca ?? '—'}</td>
                         <td style={{ ...S.td, fontWeight: 600, maxWidth: 280 }}>{p.descPro}</td>

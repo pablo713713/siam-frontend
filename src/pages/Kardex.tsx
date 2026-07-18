@@ -54,6 +54,7 @@ export function Kardex() {
   const [searched, setSearched] = useState(false);
 
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchId = useRef(0);
 
   // --- Producto seleccionado + kardex ---
   const [productoSel, setProductoSel]     = useState<Producto | null>(null);
@@ -73,17 +74,22 @@ export function Kardex() {
   }, [q, codigo]);
 
   const search = async () => {
+    const id = ++searchId.current;
     setLoading(true); setSearched(true);
     const params: AdvancedSearchParams = { page: 1, limit: LIMIT };
     if (q.trim())      params.q      = q.trim();
     if (codigo.trim()) params.codigo = codigo.trim();
     try {
       const { data } = await api.get('/productos/search/advanced', { params });
+      if (id !== searchId.current) return; // llegó tarde: ya hay una búsqueda más nueva en curso
       if (Array.isArray(data)) { setResults(data); setTotal(data.length); }
       else { setResults(data.data ?? data.items ?? []); setTotal(data.total ?? 0); }
     } catch {
+      if (id !== searchId.current) return;
       setResults([]); setTotal(0);
-    } finally { setLoading(false); }
+    } finally {
+      if (id === searchId.current) setLoading(false);
+    }
   };
 
   const clear = () => {
