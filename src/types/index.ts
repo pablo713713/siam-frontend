@@ -61,6 +61,9 @@ export interface Producto {
   pmayPro: number | null;
   ciffSus: number | null;
   idFab: number | null;
+  plisBs: number | null;
+  pminBs: number | null;
+  pmayBs: number | null;
 }
 
 export interface PaginatedResult<T> {
@@ -181,7 +184,11 @@ export interface ItemCarrito {
   descPro: string;
   cantidad: number;
   precioUnitario: number;
+  precioOriginal: number;
   importe: number;
+  plisBs: number;
+  pminBs: number;
+  pmayBs: number;
 }
 
 export interface Almacen {

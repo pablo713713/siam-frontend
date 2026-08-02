@@ -87,7 +87,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div style={{ paddingBottom: productoSel ? 320 : 0, transition: 'padding-bottom 0.3s' }}>
+    <div style={{ paddingBottom: productoSel ? 200 : 0, transition: 'padding-bottom 0.3s' }}>
       {}
       <div className={css.header}>
         <h1 className={css.title}>Busqueda avanzada</h1>
@@ -145,7 +145,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                 <table style={S.table}>
                   <thead>
                     <tr>
-                      <th style={S.th}>Cod. SIAM</th>
+                      {/* <th style={S.th}>Cod. SIAM</th> */}
                       <th style={S.th}>Cod. Fabrica</th>
                       <th style={S.th}>Marca</th>
                       <th style={S.th}>Descripcion</th>
@@ -164,7 +164,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                         onClick={() => seleccionarProducto(p)}
                         className={`${css.tableRow} ${productoSel?.id === p.id ? css.tableRowSelected : ''}`}
                       >
-                        <td style={{ ...S.td, fontSize: 12, color: BRAND.gray600 }}>{p.codPro ?? '—'}</td>
+                        {/* <td style={{ ...S.td, fontSize: 12, color: BRAND.gray600 }}>{p.codPro ?? '—'}</td> */}
                         <td style={{ ...S.td, fontSize: 12 }}>{p.codFab ?? '—'}</td>
                         <td style={S.td}>{p.marca ?? '—'}</td>
                         <td style={{ ...S.td, fontWeight: 600, maxWidth: 280 }}>{p.descPro}</td>
@@ -209,7 +209,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
           position: 'fixed', bottom: 0, left: 220, right: 0,
           background: BRAND.white, borderTop: `2px solid ${BRAND.red}`,
           boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
-          zIndex: 500, height: 300, display: 'flex', flexDirection: 'column',
+          zIndex: 500, height: 200, display: 'flex', flexDirection: 'column',
         }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -254,24 +254,21 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
               )}
             </div>
 
-            {/* Detalle */}
-            <div style={{ padding: '12px 20px', overflowY: 'auto' }}>
+            {/* Derecha — Detalle */}
+            <div style={{ padding: '8px 20px', overflowY: 'auto' }}>
               <div style={S.sectionLabel}>Detalle del producto</div>
               {loadingResumen ? (
                 <div style={{ fontSize: 12, color: BRAND.gray600 }}>Cargando...</div>
               ) : resumen?.detalle ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
                   {[
-                    { label: 'COD. SIAM',    value: resumen.detalle.codSiam },
                     { label: 'COD. FABRICA', value: resumen.detalle.codFabrica },
+                    // { label: 'MARCA',        value: resumen.detalle.marca },
                     { label: 'DESCRIPCION',  value: resumen.detalle.descripcion },
-                    { label: 'MARCA',        value: resumen.detalle.marca },
                   ].map(({ label, value }) => (
                     <div key={label}>
-                      <div style={S.sectionLabel}>{label}</div>
-                      <div style={{ fontSize: 13, color: BRAND.black, fontWeight: 500, marginTop: 2 }}>
-                        {value ?? '—'}
-                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: BRAND.gray400, letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</div>
+                      <div style={{ fontSize: 12, color: BRAND.black, fontWeight: 500 }}>{value ?? '—'}</div>
                     </div>
                   ))}
                 </div>

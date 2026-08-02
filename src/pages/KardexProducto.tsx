@@ -21,6 +21,7 @@ interface Movimiento {
   existencia: number;
   sucursal: string;
   usuario: string;
+  cliente: string;
   observacion: string;
 }
 
@@ -239,6 +240,7 @@ export function KardexProducto() {
                   <th style={{ ...S.th, textAlign: 'center' }}>Existencia</th>
                   <th style={S.th}>Sucursal</th>
                   <th style={S.th}>Usuario</th>
+                  <th style={S.th}>Cliente</th>
                   <th style={S.th}>Observación</th>
                 </tr>
               </thead>
@@ -253,9 +255,13 @@ export function KardexProducto() {
                     <td style={{ ...S.td, fontSize: 12, whiteSpace: 'nowrap' }}>{formatFecha(m.fecha)}</td>
                     <td style={{ ...S.td, fontSize: 12 }}>{m.codigo}</td>
                     <td style={S.td}>
-                      <span style={badgeStyle(
+                     <span style={badgeStyle(
                         m.descripcion === 'REMISION DE INGRESO' ? 'green' :
-                        m.descripcion === 'REMISION DE SALIDA' ? 'red' : 'gray'
+                        m.descripcion === 'INVENTARIO' && m.entrada > 0 ? 'green' :
+                        m.descripcion === 'DEVOLUCION' ? 'green' :
+                        m.descripcion === 'REMISION DE SALIDA' ? 'red' :
+                        m.descripcion === 'VENTA' ? 'red' :
+                        m.descripcion === 'CREDITO' ? 'red' : 'gray'
                       )}>
                         {m.descripcion}
                       </span>
@@ -269,6 +275,9 @@ export function KardexProducto() {
                     <td style={{ ...S.td, textAlign: 'center' }}>{m.existencia}</td>
                     <td style={{ ...S.td, fontSize: 12 }}>{getNomSuc(m.sucursal)}</td>
                     <td style={{ ...S.td, fontSize: 12 }}>{m.usuario}</td>
+                    <td style={{ ...S.td, fontSize: 12 }}>
+                      {m.cliente ?? <span style={{ color: BRAND.gray400 }}>—</span>}
+                    </td>
                     <td style={{ ...S.td, fontSize: 12, maxWidth: 250, color: BRAND.gray600 }}>
                       {m.observacion || <span style={{ color: BRAND.gray400 }}>—</span>}
                     </td>
