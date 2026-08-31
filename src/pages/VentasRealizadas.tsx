@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 
-interface VentaResumen {
+export interface VentaResumen {
   codVenta: string;
   fecha: string;
   total: number;
@@ -16,7 +16,7 @@ interface VentaResumen {
   razonSocial: string | null;
 }
 
-interface VentaDetalle extends VentaResumen {
+export interface VentaDetalle extends VentaResumen {
   obs: string | null;
   codCli: number | null;
   numCiNit: string | null;
@@ -36,46 +36,47 @@ interface VentaDetalle extends VentaResumen {
   }[];
 }
 
-interface Meta {
+export interface Meta {
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-const fmtMoney = (n: number) =>
+export const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(n);
 
-const fmtDate = (d: string) => {
+export const fmtDate = (d: string) => {
   const date = new Date(d);
   return isNaN(date.getTime()) ? d : date.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const fmtDateTime = (d: string) => {
+export const fmtDateTime = (d: string) => {
   const date = new Date(d);
   return isNaN(date.getTime()) ? d : date.toLocaleString('es-BO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+export const todayISO = () => new Date().toISOString().split('T')[0];
 
-const addDays = (date: Date, days: number) => {
+export const addDays = (date: Date, days: number) => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 };
 
-const isoDate = (d: Date) => d.toISOString().split('T')[0];
+export const isoDate = (d: Date) => d.toISOString().split('T')[0];
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
 
-function estadoBadge(estado: string) {
+export function estadoBadge(estado: string) {
   if (estado === 'C') return <span style={badgeStyle('green')}>Completada</span>;
   if (estado === 'A') return <span style={badgeStyle('red')}>Anulada</span>;
+  if (estado === 'P') return <span style={badgeStyle('gray')}>Pendiente</span>;
   return <span style={badgeStyle('gray')}>{estado}</span>;
 }
 
-function nombreCliente(v: VentaResumen) {
+export function nombreCliente(v: VentaResumen) {
   if (v.razonSocial) return v.razonSocial;
   const partes = [v.nomCliente, v.apeCliente].filter(Boolean);
   return partes.length > 0 ? partes.join(' ') : 'Cliente ocasional';
@@ -88,7 +89,7 @@ interface CalendarioProps {
   onClose: () => void;
 }
 
-function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
+export function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
   const hoy = new Date();
   const [mes, setMes] = useState(hoy.getMonth());
   const [anio, setAnio] = useState(hoy.getFullYear());
@@ -466,7 +467,7 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
   );
 }
 
-export function VerVentas() {
+export function VentasRealizadas() {
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
   const [showCal, setShowCal]   = useState(false);
@@ -481,11 +482,11 @@ export function VerVentas() {
     setLoading(true);
     setError('');
     try {
-      const params: Record<string, string | number> = { page: p, limit: 200 };
+      const params: Record<string, string | number> = { page: p, limit: 200, estado: 'C,A' };
       if (d) params.fecha = d;
       if (h) params.fecha_fin = h;
       const { data } = await api.get('/ventas', { params });
-      setVentas(data.data ?? []);
+      setVentas((data.data ?? []).filter((v: VentaResumen) => v.estado !== 'P'));
       setMeta(data.meta ?? null);
       setPage(p);
     } catch {
@@ -509,8 +510,8 @@ export function VerVentas() {
     cargar(1, '', '');
   };
 
-  const totalVentas = ventas.reduce((s, v) => s + (v.estado !== 'A' ? Number(v.total) : 0), 0);
-  const ventasActivas = ventas.filter(v => v.estado !== 'A').length;
+  const totalVentas = ventas.reduce((s, v) => s + (v.estado === 'C' ? Number(v.total) : 0), 0);
+  const ventasActivas = ventas.filter(v => v.estado === 'C').length;
 
   const labelFecha = desde && hasta
     ? desde === hasta ? `${desde}` : `${desde} → ${hasta}`
@@ -521,7 +522,7 @@ export function VerVentas() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>Ventas</div>
         <div style={{ color: BRAND.gray600, fontSize: 14, marginTop: 4 }}>
-          Consulta, filtra y revisa el detalle de cada venta registrada.
+          Consulta, filtra y revisa el detalle de las ventas ya realizadas.
         </div>
       </div>
 

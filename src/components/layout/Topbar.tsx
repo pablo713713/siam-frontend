@@ -12,7 +12,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/busqueda':    'Busqueda de Productos',
   '/clientes':    'Gestion de Clientes',
   '/ventas/nueva':'Nueva Venta',
-  '/ventas':      'Ver Ventas',
+  '/ventas/confirmar':'Confirmar Venta',
+  '/ventas':'Ventas Realizadas',
   '/devoluciones':'Devoluciones',
   '/tipo-cambio': 'Tipo de Cambio',
 };
