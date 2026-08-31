@@ -4,7 +4,7 @@ import api from '../api/axios';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
 import type { ClienteVenta, Producto } from '../types';
 
-const COD_CLI_OCASIONAL = 1191;
+const COD_CLI_OCASIONAL = 1;
 const COD_SUC_MOTORZONE = '00011';
 const STORAGE_KEY = 'siam_carrito';
 const STORAGE_CLI = 'siam_cliente_venta';
@@ -136,9 +136,12 @@ export function NuevaVenta() {
 
   const seleccionarOcasional = async () => {
     try {
-      const { data } = await api.get('/clientes/search', { params: { q: 'OCASIONAL', limit: 1 } });
-      if (data.data?.length > 0) seleccionarCliente(data.data[0]);
-    } catch { flash('Error al cargar cliente ocasional.', 'err'); }
+      const { data } = await api.get<ClienteVenta>('/clientes/ocasional');
+      seleccionarCliente(data);
+    } catch (err: unknown) {
+      const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      flash(m ?? 'No se pudo cargar el cliente ocasional.', 'err');
+    }
   };
 
   const handleProductoChange = (val: string) => {
@@ -297,7 +300,7 @@ export function NuevaVenta() {
           })),
         })),
       });
-      flash(`Venta ${data.cod_venta} registrada correctamente.`);
+      flash(`Venta ${data.cod_venta} enviada a Confirmar Venta.`);
       setCarrito([]);
       setClienteSel(null);
       localStorage.removeItem(STORAGE_KEY);
@@ -493,9 +496,19 @@ export function NuevaVenta() {
 
                         <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: BRAND.black }}>Bs {(item.importe * tipoCambio).toFixed(2)}</td>
                         <td style={S.td}>
-                          <button onClick={() => quitarDelCarrito(item.idFab)}
-                            style={{ background: '#ffeaea', border: 'none', cursor: 'pointer', color: BRAND.red, fontSize: 14, padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center' }}>
-                            <i className="ti ti-trash" />
+                          <button
+                            type="button"
+                            onClick={() => quitarDelCarrito(item.idFab)}
+                            title="Eliminar producto"
+                            aria-label={`Eliminar ${item.descPro}`}
+                            style={{
+                              width: 36, height: 36, borderRadius: 7,
+                              border: `1px solid ${BRAND.red}`, background: '#ffeaea',
+                              cursor: 'pointer', color: BRAND.red,
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            }}
+                          >
+                            <i className="ti ti-trash" style={{ fontSize: 18 }} />
                           </button>
                         </td>
                       </tr>
