@@ -284,12 +284,13 @@ export function NuevaVenta() {
         factura: false,
         descuento: 0,
         obs: '',
+        // ❌ Se eliminó 'total' para evitar la validación de NestJS
         items: carrito.map((i) => ({
           id_fab: i.idFab,
           cod_fab: i.codFab,
           cantidad: i.cantidad,
-          precio_venta: i.precioUnitario,
-          prec_lista: i.precioOriginal,
+          precio_venta: i.precioUnitario * tipoCambio, // ✅ Envía el precio en Bs
+          prec_lista: i.precioOriginal * tipoCambio,   // ✅ Envía el precio de lista en Bs
           existencia: i.cantidad,
           distribucion: i.distribucion.map((d) => ({
             cod_suc: d.cod_suc,

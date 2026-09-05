@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 
+// ── Interfaces ──
 interface VentaResumen {
   codVenta: string;
   fecha: string;
@@ -16,24 +18,26 @@ interface VentaResumen {
   razonSocial: string | null;
 }
 
+interface ItemVenta {
+  idFab: number;
+  codFab: string;
+  cantidadOriginal: number;
+  cantidadDevuelta: number;
+  cantidad: number;
+  precioVenta: number;
+  precLista: number;
+  descuento: number;
+  descPro: string;
+  codPro: string;
+}
+
 interface VentaDetalle extends VentaResumen {
   obs: string | null;
   codCli: number | null;
   numCiNit: string | null;
-  totalOriginal?: number; // <-- Nuevo
-  totalDevuelto?: number;   // <-- Nuevo
-  items: {
-    idFab: number;
-    codFab: string;
-    cantidadOriginal: number; // <-- Nuevo: Cantidad comprada inicialmente
-    cantidadDevuelta: number; // <-- Nuevo: Cantidad devuelta acumulada
-    cantidad: number;         // Cantidad neta restante
-    precioVenta: number;
-    precLista: number;
-    descuento: number;
-    descPro: string;
-    codPro: string;
-  }[];
+  totalOriginal?: number;
+  totalDevuelto?: number;
+  items: ItemVenta[];
 }
 
 interface Meta {
@@ -43,28 +47,45 @@ interface Meta {
   totalPages: number;
 }
 
+// ── Helpers de Fecha y Moneda ──
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB', minimumFractionDigits: 2 }).format(n);
 
+/** Formatea YYYY-MM-DD o ISO sin desfase de zona horaria */
+const parseLocalDate = (d: string) => {
+  if (!d) return new Date();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    const [year, month, day] = d.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(d);
+};
+
 const fmtDate = (d: string) => {
-  const date = new Date(d);
+  const date = parseLocalDate(d);
   return isNaN(date.getTime()) ? d : date.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 const fmtDateTime = (d: string) => {
-  const date = new Date(d);
+  const date = parseLocalDate(d);
   return isNaN(date.getTime()) ? d : date.toLocaleString('es-BO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+/** Retorna la fecha local en formato YYYY-MM-DD evitando errores de zona horaria UTC */
+const isoDate = (d: Date) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const todayISO = () => isoDate(new Date());
 
 const addDays = (date: Date, days: number) => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 };
-
-const isoDate = (d: Date) => d.toISOString().split('T')[0];
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
@@ -81,6 +102,7 @@ function nombreCliente(v: VentaResumen) {
   return partes.length > 0 ? partes.join(' ') : 'Cliente ocasional';
 }
 
+// ── Componente Calendario ──
 interface CalendarioProps {
   desde: string;
   hasta: string;
@@ -96,10 +118,22 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
   const [selStart, setSelStart] = useState<string | null>(desde || null);
   const [selEnd, setSelEnd] = useState<string | null>(hasta || null);
   const [seleccionando, setSeleccionando] = useState(false);
+  const calRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (calRef.current && !calRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
 
   const primerDia = new Date(anio, mes, 1);
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  const offsetInicio = (primerDia.getDay() + 6) % 7; // Lunes = 0
+  const offsetInicio = (primerDia.getDay() + 6) % 7;
 
   const celdas: (Date | null)[] = [
     ...Array(offsetInicio).fill(null),
@@ -122,8 +156,6 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
     return isoDate(d) === end;
   };
 
-  // Selección de rango 100% automática: al elegir el segundo día se aplica
-  // el filtro y el calendario se cierra solo, sin necesidad de un botón.
   const clickDia = (d: Date) => {
     const iso = isoDate(d);
     if (!seleccionando || !selStart) {
@@ -159,12 +191,15 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
   ];
 
   return (
-    <div style={{
-      position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
-      background: BRAND.white, border: `1px solid ${BRAND.gray200}`,
-      borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-      display: 'flex', minWidth: 520,
-    }}>
+    <div
+      ref={calRef}
+      style={{
+        position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 300,
+        background: BRAND.white, border: `1px solid ${BRAND.gray200}`,
+        borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+        display: 'flex', minWidth: 520,
+      }}
+    >
       {/* Presets */}
       <div style={{
         borderRight: `1px solid ${BRAND.gray200}`, padding: '16px 12px',
@@ -190,9 +225,8 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
         ))}
       </div>
 
-      {}
-      <div style={{ padding: 16 }}>
-        {}
+      {/* Grid Calendario */}
+      <div style={{ padding: 16, flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <button onClick={mesAnterior} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: BRAND.gray600 }}>
             <i className="ti ti-chevron-left" style={{ fontSize: 16 }} />
@@ -203,14 +237,12 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
           </button>
         </div>
 
-        {}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 36px)', gap: 2, marginBottom: 4 }}>
           {DIAS.map((d) => (
             <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: BRAND.gray400, padding: '4px 0' }}>{d}</div>
           ))}
         </div>
 
-        {/* Celdas */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 36px)', gap: 2 }}>
           {celdas.map((d, i) => {
             if (!d) return <div key={`e-${i}`} />;
@@ -243,7 +275,6 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
           })}
         </div>
 
-        {}
         <div style={{ marginTop: 12, fontSize: 12, color: BRAND.gray600, textAlign: 'center' }}>
           {selStart && selEnd
             ? `${selStart} → ${selEnd}`
@@ -260,7 +291,7 @@ function Calendario({ desde, hasta, onChange, onClose }: CalendarioProps) {
   );
 }
 
-// ── Drawer detalle ──
+// ── Drawer Detalle ──
 function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () => void }) {
   const [detalle, setDetalle] = useState<VentaDetalle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -268,25 +299,45 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
   const [anulando, setAnulando] = useState(false);
   const [msgAnular, setMsgAnular] = useState('');
 
+  // Escuchar tecla ESC para cerrar modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   useEffect(() => {
     setLoading(true);
     setError('');
     api.get<VentaDetalle>(`/ventas/${codVenta}`)
       .then(({ data }) => setDetalle(data))
-      .catch(() => setError('No se pudo cargar el detalle.'))
+      .catch(() => setError('No se pudo cargar el detalle de la venta.'))
       .finally(() => setLoading(false));
   }, [codVenta]);
 
   const anular = async () => {
     if (!detalle) return;
-    if (!window.confirm(`¿Anular la venta ${detalle.codVenta}?`)) return;
+    if (!window.confirm(`¿Está seguro de anular la venta ${detalle.codVenta}? Esto devolverá los productos al stock.`)) return;
+    
     setAnulando(true);
+    setMsgAnular('');
     try {
-      await api.put(`/ventas/${detalle.codVenta}/anular`);
+      // 1. Llamamos a la API enviando el flag explícito de restituir stock (si tu backend lo requiere)
+      await api.put(`/ventas/${detalle.codVenta}/anular`, { restaurarStock: true });
+      
       setDetalle({ ...detalle, estado: 'A' });
-      setMsgAnular('Venta anulada correctamente.');
-    } catch (e: any) {
-      setMsgAnular(e?.response?.data?.message ?? 'Error al anular.');
+      setMsgAnular('Venta anulada correctamente y stock devuelto al inventario.');
+      
+      // 2. IMPORTANTE: Notificar o recargar la lista principal para reflejar cambios
+      cargar(page); 
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e)) {
+        setMsgAnular(e.response?.data?.message ?? 'Error al anular la venta.');
+      } else {
+        setMsgAnular('Ocurrió un error insospechado.');
+      }
     } finally {
       setAnulando(false);
     }
@@ -311,7 +362,7 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-          {loading && <div style={{ textAlign: 'center', padding: 48, color: BRAND.gray600 }}>Cargando…</div>}
+          {loading && <div style={{ textAlign: 'center', padding: 48, color: BRAND.gray600 }}>Cargando detalle…</div>}
           {error && <div style={{ color: BRAND.red, padding: 16, borderRadius: 8, background: '#ffeaea', fontSize: 13 }}>{error}</div>}
           {detalle && (
             <>
@@ -360,24 +411,23 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
                         const esTotalmenteDevuelto = it.cantidad === 0;
 
                         return (
-                          <tr 
-                            key={`${it.idFab}-${i}`} 
-                            style={{ 
+                          <tr
+                            key={`${it.idFab}-${i}`}
+                            style={{
                               background: i % 2 === 0 ? BRAND.white : BRAND.gray50,
-                              opacity: esTotalmenteDevuelto ? 0.6 : 1 // Apaga la fila si ya se devolvió todo
+                              opacity: esTotalmenteDevuelto ? 0.6 : 1,
                             }}
                           >
                             <td style={S.td}>
                               <div style={{ fontWeight: 600, fontSize: 13 }}>
-                                {it.descPro} 
+                                {it.descPro}
                                 {esTotalmenteDevuelto && (
                                   <span style={{ ...badgeStyle('red'), marginLeft: 6, fontSize: 10 }}>Totalmente Devuelto</span>
                                 )}
                               </div>
                               <div style={{ fontSize: 11, color: BRAND.gray600, fontFamily: 'monospace' }}>{it.codFab}</div>
                             </td>
-                            
-                            {/* Cantidad Dinámica */}
+
                             <td style={{ ...S.td, textAlign: 'center' as const }}>
                               {tieneDevolucion ? (
                                 <div>
@@ -397,8 +447,7 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
                             </td>
 
                             <td style={{ ...S.td, textAlign: 'right' as const }}>{fmtMoney(it.precioVenta)}</td>
-                            
-                            {/* Subtotal Neto */}
+
                             <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>
                               {tieneDevolucion && (
                                 <div style={{ textDecoration: 'line-through', color: BRAND.gray400, fontSize: 11, fontWeight: 400 }}>
@@ -417,7 +466,7 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
                 </div>
               </div>
 
-              {/* Sección de Totales Informativos */}
+              {/* Totales Informativos de Devolución */}
               {Number(detalle.totalDevuelto) > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 16px', background: BRAND.gray50, borderRadius: '8px 8px 0 0', border: `1px solid ${BRAND.gray200}`, borderBottom: 'none', fontSize: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: BRAND.gray600 }}>
@@ -431,26 +480,25 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
                 </div>
               )}
 
-{/* Bloque Total Neto Principal */}
-<div style={{ 
-  display: 'flex', 
-  justifyContent: 'flex-end', 
-  alignItems: 'center', 
-  gap: 16, 
-  padding: '14px 16px', 
-  background: BRAND.black, 
-  borderRadius: Number(detalle.totalDevuelto) > 0 ? '0 0 8px 8px' : '8px' 
-}}>
-  <span style={{ color: BRAND.gray400, fontSize: 13, fontWeight: 600 }}>TOTAL NETO</span>
-  <span style={{ color: BRAND.white, fontSize: 22, fontWeight: 800 }}>{fmtMoney(Number(detalle.total))}</span>
-</div>
+              {/* Total Neto Principal */}
+              <div style={{
+                display: 'flex',
+                justify: 'space-between',
+                alignItems: 'center',
+                padding: '14px 16px',
+                background: BRAND.black,
+                borderRadius: Number(detalle.totalDevuelto) > 0 ? '0 0 8px 8px' : '8px'
+              }}>
+                <span style={{ color: BRAND.gray400, fontSize: 13, fontWeight: 600 }}>TOTAL NETO</span>
+                <span style={{ color: BRAND.white, fontSize: 22, fontWeight: 800 }}>{fmtMoney(Number(detalle.total))}</span>
+              </div>
 
               {detalle.estado !== 'A' && (
                 <div style={{ marginTop: 20 }}>
-                  <button onClick={anular} disabled={anulando} style={btnStyle('danger')}>
+                  {/* <button onClick={anular} disabled={anulando} style={btnStyle('danger')}>
                     <i className={`ti ${anulando ? 'ti-loader-2' : 'ti-ban'}`} />
                     {anulando ? 'Anulando…' : 'Anular venta'}
-                  </button>
+                  </button> */}
                   {msgAnular && (
                     <div style={{ marginTop: 8, fontSize: 12, color: msgAnular.includes('correctamente') ? '#1a7a40' : BRAND.red, fontWeight: 600 }}>
                       {msgAnular}
@@ -466,6 +514,7 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
   );
 }
 
+// ── Componente Principal ──
 export function VerVentas() {
   const [desde, setDesde]       = useState('');
   const [hasta, setHasta]       = useState('');
@@ -525,7 +574,7 @@ export function VerVentas() {
         </div>
       </div>
 
-      {}
+      {/* Barra de Filtros */}
       <div style={{ ...S.card, display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative' }}>
           <label style={S.label}>Rango de fechas</label>
@@ -568,7 +617,7 @@ export function VerVentas() {
         </div>
       )}
 
-      {}
+      {/* Tarjetas resumen */}
       {!loading && ventas.length > 0 && (
         <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
           {[
@@ -592,7 +641,7 @@ export function VerVentas() {
         </div>
       )}
 
-      {/* Tabla */}
+      {/* Tabla de Ventas */}
       <div style={S.card}>
         {loading && <div style={{ textAlign: 'center', padding: 48, color: BRAND.gray600 }}>Cargando ventas…</div>}
 
@@ -635,7 +684,7 @@ export function VerVentas() {
                         </div>
                       </td>
                       <td style={{ ...S.td, fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDate(v.fecha)}</td>
-                      <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>{fmtMoney(Number(v.total))}</td>
+                      <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>{fmtMoney(Number(v.total ))}</td>
                       <td style={S.td}>{estadoBadge(v.estado)}</td>
                       <td style={{ ...S.td, textAlign: 'center' as const }}>
                         <i className="ti ti-chevron-right" style={{ color: BRAND.gray400, fontSize: 16 }} />
