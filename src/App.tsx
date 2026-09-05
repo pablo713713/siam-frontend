@@ -14,7 +14,8 @@ import { NuevaVenta } from './pages/NuevaVenta';
 import { KardexProducto } from './pages/KardexProducto';
 import { Kardex } from './pages/Kardex';
 import { TipoCambio } from './pages/TipoCambio';
-import { VerVentas } from './pages/VerVentas';
+import { VentasRealizadas } from './pages/VentasRealizadas';
+import { ConfirmarVenta } from './pages/ConfirmarVentas';
 import { Devoluciones } from './pages/Devoluciones';
 
 
@@ -49,7 +50,8 @@ export default function App() {
 
           {/* Ventas */}
           <Route path="/ventas/nueva" element={<PrivateRoute><MainLayout><NuevaVenta /></MainLayout></PrivateRoute>} />
-          <Route path="/ventas" element={<PrivateRoute><MainLayout><VerVentas /></MainLayout></PrivateRoute>} />
+          <Route path="/ventas/confirmar" element={<RoleRoute role="Vendedor"><MainLayout><ConfirmarVenta /></MainLayout></RoleRoute>} />
+          <Route path="/ventas" element={<RoleRoute role="Administrador"><MainLayout><VentasRealizadas /></MainLayout></RoleRoute>} />
 
           {/* Devoluciones */}
           <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />
