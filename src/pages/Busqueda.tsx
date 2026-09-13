@@ -11,20 +11,15 @@ interface BusquedaProps {
 }
 
 interface ResumenProducto {
-  detalle: {
-    codSiam: string;
-    codFabrica: string;
-    descripcion: string;
-    marca: string;
-  } | null;
-  stockPorAlmacen: {
+  idFab: number;
+  stockMotorZone: number;
+  totalStock: number;
+  porAlmacen: {
     codSuc: string;
     nomSuc: string;
     cantidad: number;
-    diasSinMovimiento: number | null;
   }[];
 }
-
 const LIMIT = 200;
 
 export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
@@ -76,7 +71,7 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const seleccionarProducto = async (p: Producto) => {
     setProductoSel(p); setLoadingResumen(true); setResumen(null);
     try {
-      const { data } = await api.get(`/productos/${p.id}/resumen`);
+      const { data } = await api.get(`/productos/stock-fab/${p.idFab}`);
       setResumen(data);
     } catch {
       setResumen(null);
@@ -233,20 +228,24 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
                     <tr>
                       <th style={{ ...S.th, fontSize: 11, padding: '6px 8px' }}>Sucursal</th>
                       <th style={{ ...S.th, fontSize: 11, padding: '6px 8px', textAlign: 'center' }}>Cant.</th>
-                      <th style={{ ...S.th, fontSize: 11, padding: '6px 8px', textAlign: 'center' }}>Dias sin mov.</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {resumen?.stockPorAlmacen.map((s) => (
-                      <tr key={s.codSuc}>
-                        <td style={{ ...S.td, padding: '6px 8px', fontSize: 12 }}>{s.nomSuc}</td>
-                        <td style={{ ...S.td, padding: '6px 8px', textAlign: 'center', fontWeight: 700,
-                          color: s.cantidad > 0 ? BRAND.green : BRAND.gray400 }}>{s.cantidad}</td>
-                        <td style={{ ...S.td, padding: '6px 8px', textAlign: 'center', color: BRAND.gray600 }}>
-                          {s.diasSinMovimiento !== null ? s.diasSinMovimiento : '—'}
+                    {resumen && resumen.porAlmacen.length > 0 ? (
+                      resumen.porAlmacen.map((s) => (
+                        <tr key={s.codSuc}>
+                          <td style={{ ...S.td, padding: '6px 8px', fontSize: 12 }}>{s.nomSuc}</td>
+                          <td style={{ ...S.td, padding: '6px 8px', textAlign: 'center', fontWeight: 700,
+                            color: BRAND.green }}>{s.cantidad}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={2} style={{ ...S.td, padding: '10px 8px', textAlign: 'center', color: BRAND.gray400 }}>
+                          Sin stock en ningún almacén
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               )}
@@ -255,24 +254,22 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             {/* Derecha — Detalle */}
             <div style={{ padding: '8px 20px', overflowY: 'auto' }}>
               <div style={S.sectionLabel}>Detalle del producto</div>
-              {loadingResumen ? (
-                <div style={{ fontSize: 12, color: BRAND.gray600 }}>Cargando...</div>
-              ) : resumen?.detalle ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
-                  {[
-                    { label: 'COD. FABRICA', value: resumen.detalle.codFabrica },
-                    // { label: 'MARCA',        value: resumen.detalle.marca },
-                    { label: 'DESCRIPCION',  value: resumen.detalle.descripcion },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: BRAND.gray400, letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</div>
-                      <div style={{ fontSize: 12, color: BRAND.black, fontWeight: 500 }}>{value ?? '—'}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, color: BRAND.gray400 }}>Sin datos</div>
-              )}
+                {productoSel ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+                    {[
+                      { label: 'COD. FABRICA', value: productoSel.codFab },
+                      { label: 'MARCA',        value: productoSel.marca },
+                      { label: 'DESCRIPCION',  value: productoSel.descPro },
+                    ].map(({ label, value }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: BRAND.gray400, letterSpacing: 0.8, textTransform: 'uppercase' }}>{label}</div>
+                        <div style={{ fontSize: 12, color: BRAND.black, fontWeight: 500 }}>{value ?? '—'}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: BRAND.gray400 }}>Sin datos</div>
+                )}
             </div>
           </div>
         </div>
