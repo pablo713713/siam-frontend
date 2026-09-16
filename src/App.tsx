@@ -17,6 +17,7 @@ import { TipoCambio } from './pages/TipoCambio';
 import { VentasRealizadas } from './pages/VentasRealizadas';
 import { ConfirmarVenta } from './pages/ConfirmarVentas';
 import { Devoluciones } from './pages/Devoluciones';
+import { Creditos } from './pages/Creditos';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="/ventas/nueva" element={<PrivateRoute><MainLayout><NuevaVenta /></MainLayout></PrivateRoute>} />
           <Route path="/ventas/confirmar" element={<RoleRoute role="Vendedor"><MainLayout><ConfirmarVenta /></MainLayout></RoleRoute>} />
           <Route path="/ventas" element={<RoleRoute role="Administrador"><MainLayout><VentasRealizadas /></MainLayout></RoleRoute>} />
+          <Route path="/creditos" element={<PrivateRoute><MainLayout><Creditos /></MainLayout></PrivateRoute>} />
 
           {/* Devoluciones */}
           <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />

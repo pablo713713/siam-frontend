@@ -195,3 +195,41 @@ export interface Almacen {
   codSuc: string;
   nomSuc: string;
 }
+
+export type AlertaCredito = 'ok' | 'proximo' | 'vencido';
+
+export interface CreditoActivo {
+  codCre: string;
+  codCli: number;
+  nomCliente: string | null;
+  apeCliente: string | null;
+  razonSocial: string | null;
+  fecInicio: string;
+  fecFin: string;
+  total: number;
+  saldo: number;
+  diasRestantes: number;
+  alerta: AlertaCredito;
+}
+
+export interface ClienteCredito {
+  codCli: number;
+  nomCliente: string | null;
+  apeCliente: string | null;
+  razonSocial: string | null;
+  creditoMaximo: number;
+  usado: number;
+  disponible: number;
+  alerta: AlertaCredito | null;
+}
+
+export interface CreditoClienteResponse {
+  creditos: Pick<CreditoActivo, 'codCre' | 'fecInicio' | 'fecFin' | 'total' | 'saldo' | 'diasRestantes' | 'alerta'>[];
+  totalSaldos: number;
+}
+
+export interface PagoMultipleResponse {
+  resultados: { cod_cre: string; montoAbonado: number; estado: string }[];
+  totalAbonado: number;
+  message: string;
+}

@@ -1,0 +1,159 @@
+.page { 
+    max-width: 1440px; 
+}
+.pageHeader { 
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; 
+}
+.title { 
+    font-size: 22px; font-weight: 800; color: #111;
+}
+.subtitle { 
+    margin-top: 4px; color: #777; font-size: 12px;
+}
+.refresh { 
+    border: 1px solid #ddd; background: #fff; color: #333; border-radius: 6px; padding: 9px 13px; cursor: pointer; font: inherit; font-size: 12px; 
+}
+.refresh:hover { 
+    background: #f6f6f6; 
+}
+.message { 
+    padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; 
+}
+.error { 
+    background: #fff0f0; border: 1px solid #f4caca; color: #a51d1d; 
+}
+.success { 
+    background: #ecfaf1; border: 1px solid #b7e3c7; color: #1b7540; 
+}
+.summary { 
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; 
+}
+.metric { 
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; 
+}
+.metricLabel { 
+    color: #777; font-size: 11px; text-transform: uppercase; letter-spacing: .8px; 
+}
+.metricValue { 
+    display: block; margin-top: 6px; color: #111; font-size: 21px; font-weight: 800; 
+}
+.content { 
+    display: grid; grid-template-columns: minmax(280px, .8fr) minmax(430px, 1.5fr); gap: 16px; align-items: start; 
+}
+.panel { 
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; 
+}
+.panelHeader { 
+    padding: 15px 16px; border-bottom: 1px solid #eee; 
+}
+.panelTitle { 
+    font-size: 14px; font-weight: 800; color: #222; 
+}
+.panelHint { 
+    color: #888; font-size: 11px; margin-top: 3px; 
+}
+.search { 
+    width: 100%; box-sizing: border-box; margin-top: 12px; padding: 9px 10px; border: 1px solid #ddd; border-radius: 5px; font: inherit; font-size: 12px; 
+}
+.search:focus { 
+    outline: 2px solid #f2caca; border-color: #d72626; 
+}
+.clientList { 
+    max-height: 520px; overflow-y: auto; 
+}
+.client { 
+    display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 13px 16px; text-align: left; border: 0; border-bottom: 1px solid #f0f0f0; background: #fff; cursor: pointer; 
+}
+.client:hover { 
+    background: #fafafa; 
+}
+.selected { 
+    background: #fff6f6; box-shadow: inset 3px 0 #d72626; 
+}
+.clientName { 
+    color: #222; font-size: 13px; font-weight: 700; 
+}
+.clientMeta { 
+    color: #888; font-size: 11px; margin-top: 3px; 
+}
+.clientAmount { 
+    text-align: right; white-space: nowrap; color: #333; font-size: 12px; font-weight: 700; 
+}
+.clientAvailable { 
+    display: block; color: #777; font-size: 10px; font-weight: 400; margin-top: 3px; 
+}
+.alerta { 
+    width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; 
+}
+.ok { 
+    background: #55ae76; 
+}
+.proximo { 
+    background: #e4ae32; 
+}
+.vencido { 
+    background: #d72626; 
+}
+.detail { 
+    padding: 16px; 
+}
+.detailHeader { 
+    display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 14px; 
+}
+.detailName { 
+    font-size: 18px; font-weight: 800; color: #111; 
+}
+.detailMeta { 
+    color: #777; font-size: 12px; margin-top: 4px; 
+}
+.total { 
+    text-align: right; white-space: nowrap; 
+}
+.totalLabel { 
+    color: #888; font-size: 11px; display: block; 
+}
+.totalValue { 
+    color: #d72626; font-size: 18px; font-weight: 800; 
+}
+.tableWrap { 
+    overflow-x: auto; 
+}
+.table { 
+    width: 100%; border-collapse: collapse; font-size: 12px; 
+}
+.table th { 
+    color: #888; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; text-align: left; padding: 10px 8px; border-bottom: 1px solid #ddd; 
+}
+.table td { 
+    padding: 12px 8px; border-bottom: 1px solid #f0f0f0; color: #333; white-space: nowrap; 
+}
+.table th:first-child, .table td:first-child { 
+    padding-left: 0; 
+}
+.table th:last-child, .table td:last-child { 
+    padding-right: 0; text-align: right; 
+}
+.check { 
+    width: 16px; height: 16px; accent-color: #d72626; cursor: pointer; 
+}
+.status { 
+    display: inline-flex; align-items: center; font-size: 11px; 
+}
+.payBar { 
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 16px; 
+}
+.payButton { 
+    border: 0; background: #d72626; color: #fff; border-radius: 6px; padding: 10px 15px; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; 
+}
+.payButton:hover { 
+    background: #b91f1f; 
+}
+.payButton:disabled { 
+    opacity: .45; cursor: not-allowed; 
+}
+.empty { 
+    padding: 38px 16px; color: #999; text-align: center; font-size: 13px; 
+}
+@media (max-width: 900px) { .content { grid-template-columns: 1fr; } .clientList { max-height: 300px; } }
+@media (max-width: 560px) { .summary { grid-template-columns: 1fr; } .pageHeader, .detailHeader, .payBar { flex-direction: column; } .total { text-align: left; } 
+}
