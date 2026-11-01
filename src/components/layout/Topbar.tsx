@@ -70,45 +70,6 @@ export function Topbar({ onQuickSearch }: TopbarProps) {
       <span className={css.pageTitle}>{pageLabel}</span>
 
       {}
-      <div className={css.searchWrap}>
-        <i className={`ti ti-search ${css.searchIcon}`} aria-hidden="true" />
-        <input
-          value={query}
-          onChange={(e) => handleChange(e.target.value)}
-          onFocus={() => results.length > 0 && setShowDrop(true)}
-          onBlur={() => setTimeout(() => setShowDrop(false), 200)}
-          onKeyDown={(e) => e.key === 'Enter' && goToAdvanced()}
-          placeholder="Buscar producto..."
-          className={css.searchInput}
-          aria-label="Busqueda rapida"
-        />
-
-        {showDrop && (
-          <div className={css.dropdown}>
-            {searching && (
-              <div className={css.dropdownMsg}>Buscando...</div>
-            )}
-            {!searching && results.length === 0 && (
-              <div className={css.dropdownMsg}>Sin resultados</div>
-            )}
-            {!searching && results.map((p) => (
-              <div key={p.id} onClick={goToAdvanced} className={css.dropdownItem}>
-                <span className={css.dropdownItemName}>{p.descPro}</span>
-                <span className={css.dropdownItemMeta}>
-                  Cod: {p.codPro ?? '—'} | Fab: {p.codigo ?? '—'}
-                </span>
-              </div>
-            ))}
-            {results.length > 0 && (
-              <div onClick={goToAdvanced} className={css.dropdownMore}>
-                Ver todos los resultados
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {}
       <div className={css.userArea}>
         <div className={css.avatar}>{initials}</div>
         <span className={css.userName}>{usuario?.alias}</span>

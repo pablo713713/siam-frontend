@@ -18,6 +18,7 @@ import { VentasRealizadas } from './pages/VentasRealizadas';
 import { ConfirmarVenta } from './pages/ConfirmarVentas';
 import { Devoluciones } from './pages/Devoluciones';
 import { Creditos } from './pages/Creditos';
+import { MovimientosAlmacen } from './pages/MovimientosAlmacen';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -43,6 +44,7 @@ export default function App() {
           {/* Inventario */}
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
           <Route path="/kardex" element={<PrivateRoute><MainLayout><Kardex /></MainLayout></PrivateRoute>} />
+          <Route path="/productos/movimientos" element={<PrivateRoute><MainLayout><MovimientosAlmacen /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />
 

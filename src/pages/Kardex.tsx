@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
-import type { Producto, AdvancedSearchParams } from '../types';
+import type { Almacen, Producto, AdvancedSearchParams } from '../types';
 import css from './Kardex.module.css';
 
 interface InfoProducto {
@@ -24,16 +24,6 @@ interface Movimiento {
   usuario: string;
   observacion: string;
 }
-
-const ALMACENES = [
-  { codSuc: 'TODOS', nomSuc: 'Todos los almacenes' },
-  { codSuc: '00004', nomSuc: 'Almacén I' },
-  { codSuc: '00005', nomSuc: 'Almacén II' },
-  { codSuc: '00006', nomSuc: 'Almacén III' },
-  { codSuc: '00007', nomSuc: 'Almacén IV' },
-  { codSuc: '00010', nomSuc: 'Almacén 2H' },
-  { codSuc: '00011', nomSuc: 'Motor Zone' },
-];
 
 const PERIODOS = [
   { label: 'Todo', value: '' },
@@ -61,10 +51,18 @@ export function Kardex() {
   const [info, setInfo]                   = useState<InfoProducto | null>(null);
   const [movimientos, setMovimientos]     = useState<Movimiento[]>([]);
   const [loadingKardex, setLoadingKardex] = useState(false);
+  const [almacenes, setAlmacenes]         = useState<Almacen[]>([]);
+  const [errorAlmacenes, setErrorAlmacenes] = useState('');
 
   const [codSuc, setCodSuc]         = useState('TODOS');
   const [periodoSel, setPeriodoSel] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
+
+  useEffect(() => {
+    api.get<Almacen[]>('/productos/almacenes-disponibles')
+      .then(({ data }) => setAlmacenes(data))
+      .catch(() => setErrorAlmacenes('No se pudieron cargar los almacenes disponibles.'));
+  }, []);
 
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
@@ -144,7 +142,7 @@ export function Kardex() {
     return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  const getNomSuc = (cod: string) => ALMACENES.find((a) => a.codSuc === cod)?.nomSuc ?? cod;
+  const getNomSuc = (cod: string) => almacenes.find((a) => a.codSuc === cod)?.nomSuc ?? cod;
 
   return (
     <div>
@@ -239,6 +237,7 @@ export function Kardex() {
       {}
       {productoSel && (
         <>
+          {errorAlmacenes && <div style={S.errorBanner} role="alert">{errorAlmacenes}</div>}
           <div style={{ marginBottom: 16 }}>
             <button style={btnStyle()} onClick={cerrarKardex}>
               <i className="ti ti-arrow-left" aria-hidden="true" />
@@ -295,7 +294,7 @@ export function Kardex() {
                 <div style={S.formGroup}>
                   <label style={S.label}>Mostrar kardex de almacén</label>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {ALMACENES.map((a) => (
+                    {[{ codSuc: 'TODOS', nomSuc: 'Todos los almacenes' }, ...almacenes].map((a) => (
                       <button
                         key={a.codSuc}
                         onClick={() => seleccionarAlmacen(a.codSuc)}

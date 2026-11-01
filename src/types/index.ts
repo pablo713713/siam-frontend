@@ -196,6 +196,34 @@ export interface Almacen {
   nomSuc: string;
 }
 
+export interface ItemMovimientoMercaderia {
+  id_fab: number;
+  cantidad: number;
+  obs?: string;
+}
+
+export interface IngresoMercaderiaRequest {
+  cod_suc: string;
+  cod_usu: string;
+  obs?: string;
+  items: ItemMovimientoMercaderia[];
+}
+
+export interface TraspasoAlmacenRequest {
+  cod_suc_ori: string;
+  cod_suc_des: string;
+  cod_usu: string;
+  obs?: string;
+  items: ItemMovimientoMercaderia[];
+}
+
+export interface MovimientoMercaderiaResponse {
+  message: string;
+  codRemEntrada: string;
+  codRemSalida?: string;
+  almacen?: string;
+}
+
 export type AlertaCredito = 'ok' | 'proximo' | 'vencido';
 
 export interface CreditoActivo {
