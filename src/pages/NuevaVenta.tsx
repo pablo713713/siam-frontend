@@ -61,8 +61,7 @@ export function NuevaVenta() {
 
   // Cargar tipo de cambio paralelo
   useEffect(() => {
-    const codEmp = usuario?.cod_emp ?? '001';
-    api.get(`/ventas/dolar-paralelo/vigente?cod_emp=${codEmp}`)
+    api.get('/ventas/dolar-paralelo/vigente')
       .then(({ data }) => setTipoCambio(Number(data.tipoCambio) || 1))
       .catch(() => setTipoCambio(1));
   }, []);
@@ -285,15 +284,15 @@ export function NuevaVenta() {
         cod_cli: clienteSel.codCli,
         cod_suc: COD_SUC_MOTORZONE,
         factura: false,
+        estado: 'P',   // 👈 nace pendiente, se confirma después en "Confirmar Venta"
         descuento: 0,
         obs: '',
-        // ❌ Se eliminó 'total' para evitar la validación de NestJS
         items: carrito.map((i) => ({
           id_fab: i.idFab,
           cod_fab: i.codFab,
           cantidad: i.cantidad,
-          precio_venta: i.precioUnitario * tipoCambio, // ✅ Envía el precio en Bs
-          prec_lista: i.precioOriginal * tipoCambio,   // ✅ Envía el precio de lista en Bs
+          precio_venta: i.precioUnitario * tipoCambio,
+          prec_lista: i.precioOriginal * tipoCambio,
           existencia: i.cantidad,
           distribucion: i.distribucion.map((d) => ({
             cod_suc: d.cod_suc,

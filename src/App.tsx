@@ -18,6 +18,7 @@ import { VentasRealizadas } from './pages/VentasRealizadas';
 import { ConfirmarVenta } from './pages/ConfirmarVentas';
 import { Devoluciones } from './pages/Devoluciones';
 import { Creditos } from './pages/Creditos';
+import { CreditosAbiertos } from './pages/CreditosAbiertos';
 
 
 function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
@@ -59,6 +60,8 @@ export default function App() {
           <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />
 
           <Route path="*" element={<DefaultRedirect />} />
+
+          <Route path="/creditos/abiertos" element={<PrivateRoute><MainLayout><CreditosAbiertos /></MainLayout></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
