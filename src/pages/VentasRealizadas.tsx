@@ -78,7 +78,9 @@ export function estadoBadge(estado: string) {
 }
 
 export function nombreCliente(v: VentaResumen) {
-  if (v.razonSocial) return v.razonSocial;
+  if (v.razonSocial && v.razonSocial.trim().toUpperCase() !== 'NINGUNO') {
+    return v.razonSocial;
+  }
   const partes = [v.nomCliente, v.apeCliente].filter(Boolean);
   return partes.length > 0 ? partes.join(' ') : 'Cliente ocasional';
 }

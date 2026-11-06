@@ -26,7 +26,8 @@ const NAV: NavItem[] = [
   { icon: 'ti-shopping-cart',    label: 'Nueva Venta',       to: '/ventas/nueva', requiredRole: 'Vendedor'      },
   { icon: 'ti-shopping-cart',    label: 'Confirmar Venta',       to: '/ventas/confirmar', requiredRole: 'Vendedor'      }, 
   { icon: 'ti-receipt',          label: 'Ventas realizadas',        to: '/ventas',       requiredRole: 'Administrador' },
-  { icon: 'ti-wallet',           label: 'Créditos',                  to: '/creditos' },
+  { icon: 'ti-wallet',           label: 'Clientes con Créditos',                  to: '/creditos', requiredRole: 'Vendedor' },
+  { icon: 'ti-wallet',           label: 'Créditos Abiertos',                  to: '/creditos/abiertos', requiredRole: 'Vendedor' },
   { icon: 'ti-arrow-back-up',    label: 'Devoluciones',      to: '/devoluciones', requiredRole: 'Administrador' },
 ];
 

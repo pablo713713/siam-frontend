@@ -43,7 +43,9 @@ const fmtDate = (d: string) => {
 };
 
 function nombreCliente(c: ClienteSearch) {
-  if (c.razonSocial) return c.razonSocial;
+  if (c.razonSocial && c.razonSocial.trim().toUpperCase() !== 'NINGUNO') {
+    return c.razonSocial;
+  }
   return [c.nomCli, c.apeCli].filter(Boolean).join(' ') || '—';
 }
 
