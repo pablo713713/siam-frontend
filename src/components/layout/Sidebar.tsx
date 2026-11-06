@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Busqueda Avanzada', to: '/busqueda'      },
   { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },
+  { icon: 'ti-transfer',         label: 'Movimientos de almacén', to: '/productos/movimientos' },
   { section: 'Clientes' },
   { icon: 'ti-users',            label: 'Gestion de Clientes', to: '/clientes'    },
   { section: 'Ventas' },
