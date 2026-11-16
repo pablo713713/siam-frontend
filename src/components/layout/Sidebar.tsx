@@ -8,6 +8,7 @@ interface NavItem {
   to?: string;
   section?: string;
   requiredRole?: string;
+  anyRole?: string[]; // visible si el usuario tiene al menos uno de estos roles
 }
 
 const NAV: NavItem[] = [
@@ -20,6 +21,7 @@ const NAV: NavItem[] = [
   { icon: 'ti-search',           label: 'Busqueda Avanzada', to: '/busqueda'      },
   { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },
   { icon: 'ti-transfer',         label: 'Movimientos de almacén', to: '/productos/movimientos' },
+  { icon: 'ti-history',          label: 'Historial de traspasos', to: '/productos/traspasos', anyRole: ['Administrador', 'Encargado de Almacen'] },
   { section: 'Clientes' },
   { icon: 'ti-users',            label: 'Gestion de Clientes', to: '/clientes'    },
   { section: 'Ventas' },
@@ -41,6 +43,7 @@ export function Sidebar() {
     : '?';
 
   const navFiltrado = NAV.filter((item) => {
+    if (item.anyRole) return usuario?.roles?.some((r) => item.anyRole!.includes(r)) ?? false;
     if (!item.requiredRole) return true;
     return usuario?.roles?.includes(item.requiredRole) ?? false;
   });

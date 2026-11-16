@@ -19,13 +19,16 @@ import { ConfirmarVenta } from './pages/ConfirmarVentas';
 import { Devoluciones } from './pages/Devoluciones';
 import { Creditos } from './pages/Creditos';
 import { MovimientosAlmacen } from './pages/MovimientosAlmacen';
+import { HistorialTraspasos } from './pages/HistorialTraspasos';
 import { CreditosAbiertos } from './pages/CreditosAbiertos';
 
 
-function RoleRoute({ role, children }: { role: string; children: React.ReactNode }) {
+function RoleRoute({ role, children }: { role: string | string[]; children: React.ReactNode }) {
   const { usuario, isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!usuario?.roles?.includes(role)) return <Navigate to="/busqueda" replace />;
+  // Con una lista, basta con tener uno de los roles
+  const permitidos = Array.isArray(role) ? role : [role];
+  if (!usuario?.roles?.some((r) => permitidos.includes(r))) return <Navigate to="/busqueda" replace />;
   return <>{children}</>;
 }
 
@@ -46,6 +49,7 @@ export default function App() {
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
           <Route path="/kardex" element={<PrivateRoute><MainLayout><Kardex /></MainLayout></PrivateRoute>} />
           <Route path="/productos/movimientos" element={<PrivateRoute><MainLayout><MovimientosAlmacen /></MainLayout></PrivateRoute>} />
+          <Route path="/productos/traspasos" element={<RoleRoute role={['Administrador', 'Encargado de Almacen']}><MainLayout><HistorialTraspasos /></MainLayout></RoleRoute>} />
           <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />
 
