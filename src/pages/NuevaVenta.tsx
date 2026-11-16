@@ -22,12 +22,6 @@ interface StockFab {
   porAlmacen: StockAlmacen[];
 }
 
-interface DistribItem {
-  cod_suc: string;
-  nomSuc: string;
-  cantidad: number;
-}
-
 interface ItemCarrito {
   idFab: number;
   codFab: string;
@@ -39,7 +33,6 @@ interface ItemCarrito {
   stockMotorZone: number;
   totalStock: number;
   stockPorAlmacen: StockAlmacen[];
-  distribucion: DistribItem[];
   plisPro: number;
   pminPro: number;
   pmayPro: number;
@@ -75,9 +68,6 @@ export function NuevaVenta() {
     if (!p.idFab || !p.plisPro) return;
     if (carrito.find((i) => i.idFab === p.idFab)) return;
     api.get<StockFab>(`/productos/stock-fab/${p.idFab}`).then(({ data }) => {
-      const distribucion: DistribItem[] = data.stockMotorZone > 0
-        ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: 1 }]
-        : [];
       setCarrito((prev) => [...prev, {
         idFab: p.idFab!,
         codFab: p.codFab ?? '',
@@ -89,7 +79,6 @@ export function NuevaVenta() {
         stockMotorZone: data.stockMotorZone,
         totalStock: data.totalStock,
         stockPorAlmacen: data.porAlmacen,
-        distribucion,
         plisPro: p.plisPro ?? 0,
         pminPro: p.pminPro ?? 0,
         pmayPro: p.pmayPro ?? 0,
@@ -166,9 +155,6 @@ export function NuevaVenta() {
     }
     try {
       const { data } = await api.get<StockFab>(`/productos/stock-fab/${p.idFab}`);
-      const distribucion: DistribItem[] = data.stockMotorZone > 0
-        ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: 1 }]
-        : [];
       setCarrito((prev) => [...prev, {
         idFab: p.idFab!,
         codFab: p.codFab ?? '',
@@ -180,7 +166,6 @@ export function NuevaVenta() {
         stockMotorZone: data.stockMotorZone,
         totalStock: data.totalStock,
         stockPorAlmacen: data.porAlmacen,
-        distribucion,
         plisPro: p.plisPro ?? 0,
         pminPro: p.pminPro ?? 0,
         pmayPro: p.pmayPro ?? 0,
@@ -193,21 +178,10 @@ export function NuevaVenta() {
     if (nuevaCantidad < 1) return;
     setCarrito((prev) => prev.map((item) => {
       if (item.idFab !== idFab) return item;
-      if (nuevaCantidad <= item.stockMotorZone) {
-        return {
-          ...item,
-          cantidad: nuevaCantidad,
-          importe: nuevaCantidad * item.precioUnitario,
-          distribucion: [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: nuevaCantidad }],
-        };
-      }
       return {
         ...item,
         cantidad: nuevaCantidad,
         importe: nuevaCantidad * item.precioUnitario,
-        distribucion: item.stockMotorZone > 0
-          ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: item.stockMotorZone }]
-          : [],
       };
     }));
   };
@@ -225,35 +199,14 @@ export function NuevaVenta() {
     }));
   };
 
-  const cambiarDistribucion = (idFab: number, codSuc: string, nomSuc: string, cantidadAlmacen: number) => {
-    if (!codSuc) return;
-    setCarrito((prev) => prev.map((item) => {
-      if (item.idFab !== idFab) return item;
-      let nuevaDistrib: DistribItem[];
-      const existe = item.distribucion.find((d) => d.cod_suc === codSuc);
-      if (existe) {
-        nuevaDistrib = cantidadAlmacen > 0
-          ? item.distribucion.map((d) => d.cod_suc === codSuc ? { ...d, cantidad: cantidadAlmacen } : d)
-          : item.distribucion.filter((d) => d.cod_suc !== codSuc);
-      } else {
-        nuevaDistrib = cantidadAlmacen > 0
-          ? [...item.distribucion, { cod_suc: codSuc, nomSuc, cantidad: cantidadAlmacen }]
-          : item.distribucion;
-      }
-      const totalDistrib = nuevaDistrib.reduce((s, d) => s + d.cantidad, 0);
-      return { ...item, distribucion: nuevaDistrib, cantidad: totalDistrib, importe: totalDistrib * item.precioUnitario };
-    }));
-  };
-
   const quitarDelCarrito = (idFab: number) => {
     setCarrito((prev) => prev.filter((i) => i.idFab !== idFab));
     if (expandedStock === idFab) setExpandedStock(null);
   };
 
   const getColorCantidad = (item: ItemCarrito) => {
-    if (item.cantidad <= item.stockMotorZone) return '#1a7a40';
-    if (item.cantidad <= item.totalStock) return '#e67e00';
-    return BRAND.red;
+    // Solo se vende desde MOTOR ZONE
+    return item.cantidad <= item.stockMotorZone ? '#1a7a40' : BRAND.red;
   };
 
   const totalCarrito = carrito.reduce((sum, i) => sum + i.importe, 0);
@@ -267,13 +220,14 @@ export function NuevaVenta() {
     if (!clienteSel) { flash('Seleccioná un cliente.', 'err'); return; }
     if (!carrito.length) { flash('El carrito está vacío.', 'err'); return; }
     for (const item of carrito) {
-      if (item.cantidad > item.totalStock) {
-        flash(`Stock insuficiente para "${item.descPro}". Disponible: ${item.totalStock}`, 'err');
-        return;
-      }
-      const totalDistrib = item.distribucion.reduce((s, d) => s + d.cantidad, 0);
-      if (totalDistrib !== item.cantidad) {
-        flash(`La distribución de "${item.descPro}" no coincide. Distribuido: ${totalDistrib}, Pedido: ${item.cantidad}`, 'err');
+      // Solo se vende desde MOTOR ZONE: lo que esté en otros almacenes
+      // debe traspasarse antes (Movimientos → Traspaso, salida a venta).
+      if (item.cantidad > item.stockMotorZone) {
+        flash(
+          `Solo hay ${item.stockMotorZone} de "${item.descPro}" en MOTOR ZONE. ` +
+          'Pide al encargado del almacén un traspaso a MOTOR ZONE antes de vender.',
+          'err',
+        );
         return;
       }
     }
@@ -294,10 +248,6 @@ export function NuevaVenta() {
           precio_venta: i.precioUnitario * tipoCambio,
           prec_lista: i.precioOriginal * tipoCambio,
           existencia: i.cantidad,
-          distribucion: i.distribucion.map((d) => ({
-            cod_suc: d.cod_suc,
-            cantidad: d.cantidad,
-          })),
         })),
       });
       flash(`Venta ${data.cod_venta} enviada a Confirmar Venta.`);
@@ -425,8 +375,6 @@ export function NuevaVenta() {
               </thead>
               <tbody>
                 {carrito.map((item) => {
-                  const totalDistrib = item.distribucion.reduce((s, d) => s + d.cantidad, 0);
-                  const distribOk = totalDistrib === item.cantidad;
                   const descItem = item.precioOriginal > 0
                     ? ((item.precioUnitario - item.precioOriginal) / item.precioOriginal * 100).toFixed(1)
                     : '0.0';
@@ -443,12 +391,9 @@ export function NuevaVenta() {
                             <span style={{ color: BRAND.gray600 }}>Total: <strong>{item.totalStock}</strong></span>
                             {item.cantidad > item.stockMotorZone && (
                               <button onClick={() => setExpandedStock(expandedStock === item.idFab ? null : item.idFab)}
-                                style={{ background: 'none', border: `1px solid ${item.cantidad <= item.totalStock ? '#e67e00' : BRAND.red}`, borderRadius: 4, color: item.cantidad <= item.totalStock ? '#e67e00' : BRAND.red, fontSize: 10, cursor: 'pointer', padding: '1px 6px', fontFamily: 'inherit', fontWeight: 600 }}>
-                                Stock actual {expandedStock === item.idFab ? '▲' : '▼'}
+                                style={{ background: 'none', border: `1px solid ${BRAND.red}`, borderRadius: 4, color: BRAND.red, fontSize: 10, cursor: 'pointer', padding: '1px 6px', fontFamily: 'inherit', fontWeight: 600 }}>
+                                ⚠ Falta en MZ · ver almacenes {expandedStock === item.idFab ? '▲' : '▼'}
                               </button>
-                            )}
-                            {item.cantidad > item.stockMotorZone && !distribOk && (
-                              <span style={{ color: '#e67e00', fontSize: 10, fontWeight: 600 }}>⚠ Distribuido: {totalDistrib}/{item.cantidad}</span>
                             )}
                           </div>
                         </td>
@@ -516,30 +461,19 @@ export function NuevaVenta() {
                       {expandedStock === item.idFab && (
                         <tr key={`${item.idFab}-dist`}>
                           <td colSpan={6} style={{ ...S.td, background: '#fffbf0', padding: 12 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: '#e67e00', marginBottom: 8 }}>
-                              Stock actual — ingresá cuántas unidades tomar de cada almacén
+                            <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.red, marginBottom: 4 }}>
+                              Solo se vende desde MOTOR ZONE: hay {item.stockMotorZone} y pediste {item.cantidad}.
+                            </div>
+                            <div style={{ fontSize: 12, color: BRAND.gray600, marginBottom: 8 }}>
+                              Para vender lo que está en otro almacén, el encargado de ese almacén debe registrar un traspaso a MOTOR ZONE (Movimientos → Traspaso).
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                              {item.stockPorAlmacen.map((alm) => {
-                                const distrib = item.distribucion.find((d) => d.cod_suc === alm.codSuc);
-                                return (
-                                  <div key={alm.codSuc} style={{ border: `1px solid ${BRAND.gray200}`, borderRadius: 8, padding: '8px 12px', background: BRAND.white, minWidth: 160 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, marginBottom: 4 }}>{alm.nomSuc}</div>
-                                    <div style={{ fontSize: 11, color: BRAND.gray600, marginBottom: 6 }}>Disponible: <strong style={{ color: '#1a7a40' }}>{alm.cantidad}</strong></div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                      <label style={{ fontSize: 10, color: BRAND.gray600 }}>Tomar:</label>
-                                      <input type="number" min={0} max={alm.cantidad} value={distrib?.cantidad ?? 0}
-                                        onChange={(e) => cambiarDistribucion(item.idFab, alm.codSuc, alm.nomSuc, Math.min(Math.max(0, Number(e.target.value)), alm.cantidad))}
-                                        style={{ width: 60, padding: '3px 6px', borderRadius: 4, border: `1px solid ${BRAND.gray200}`, fontSize: 12, fontFamily: 'inherit', textAlign: 'center' }}
-                                      />
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <div style={{ marginTop: 8, fontSize: 12 }}>
-                              Distribuido: <strong style={{ color: distribOk ? '#1a7a40' : '#e67e00' }}>{totalDistrib}</strong> / {item.cantidad} unidades
-                              {distribOk && <span style={{ color: '#1a7a40', marginLeft: 6 }}>✓ Completo</span>}
+                              {item.stockPorAlmacen.map((alm) => (
+                                <div key={alm.codSuc} style={{ border: `1px solid ${BRAND.gray200}`, borderRadius: 8, padding: '8px 12px', background: BRAND.white, minWidth: 160 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray600, marginBottom: 4 }}>{alm.nomSuc}</div>
+                                  <div style={{ fontSize: 11, color: BRAND.gray600 }}>Disponible: <strong style={{ color: '#1a7a40' }}>{alm.cantidad}</strong></div>
+                                </div>
+                              ))}
                             </div>
                           </td>
                         </tr>

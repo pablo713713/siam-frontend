@@ -3,9 +3,12 @@ import axios from 'axios';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { BRAND, S, badgeStyle, btnStyle } from '../components/ui/tokens';
+import { FirmaTraspasoModal } from '../components/traspasos/FirmaTraspasoModal';
 import type {
   Almacen,
+  ContextoTraspaso,
   IngresoMercaderiaRequest,
+  TipoTraspaso,
   MovimientoMercaderiaResponse,
   Producto,
   TraspasoAlmacenRequest,
@@ -38,6 +41,34 @@ const getErrorMessage = (error: unknown) => {
 
 const LIMIT = 30;
 
+// Misma regla que el backend (calcularTipoTraspaso): solo se usa para mostrar
+// qué firma se pedirá; el backend vuelve a calcularlo y es quien decide.
+const calcularTipoTraspaso = (ctx: ContextoTraspaso | null, origen: string, destino: string): TipoTraspaso => {
+  const tienda = ctx?.almacenesTienda ?? [];
+  const origenEnTienda = tienda.includes(origen);
+  if (origenEnTienda && destino === ctx?.almacenPrincipal) return 'SALIDA_VENTA';
+  if (!origenEnTienda && tienda.includes(destino)) return 'INGRESO_TIENDA';
+  return 'ENTRE_ALMACENES';
+};
+
+const ETIQUETA_TIPO: Record<TipoTraspaso, { texto: string; ayuda: string; color: 'amber' | 'blue' | 'gray' }> = {
+  SALIDA_VENTA: {
+    texto: 'Salida a venta',
+    ayuda: 'Firma el vendedor que se lleva los productos.',
+    color: 'amber',
+  },
+  INGRESO_TIENDA: {
+    texto: 'Ingreso a tienda',
+    ayuda: 'Firmas tú con tu contraseña.',
+    color: 'blue',
+  },
+  ENTRE_ALMACENES: {
+    texto: 'Entre almacenes',
+    ayuda: 'Firmas tú con tu contraseña.',
+    color: 'gray',
+  },
+};
+
 export function MovimientosAlmacen() {
   const { usuario } = useAuth();
   const [tipo, setTipo] = useState<TipoMovimiento>('INGRESO');
@@ -54,14 +85,22 @@ export function MovimientosAlmacen() {
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [contexto, setContexto] = useState<ContextoTraspaso | null>(null);
+  const [firmaAbierta, setFirmaAbierta] = useState(false);
+  const [errorFirma, setErrorFirma] = useState('');
 
   useEffect(() => {
     const cargarAlmacenes = async () => {
       try {
         const { data } = await api.get<Almacen[]>('/productos/almacenes-disponibles');
         setAlmacenes(data);
-        setAlmacenOrigen(data[0]?.codSuc ?? '');
-        setAlmacenDestino(data[1]?.codSuc ?? data[0]?.codSuc ?? '');
+        setAlmacenDestino(data[0]?.codSuc ?? '');
+        // Si falla el contexto, el ingreso de mercadería sigue funcionando
+        const { data: ctx } = await api.get<ContextoTraspaso>('/productos/traspaso/contexto');
+        setContexto(ctx);
+        // Traspaso: el origen solo puede ser un almacén asignado al encargado
+        const origen = ctx.origenes[0]?.codSuc ?? '';
+        setAlmacenOrigen(origen);
       } catch (requestError) {
         setAlmacenesError(getErrorMessage(requestError));
       } finally {
@@ -70,6 +109,34 @@ export function MovimientosAlmacen() {
     };
     void cargarAlmacenes();
   }, []);
+
+  // Destinos posibles para el traspaso: todos menos el origen
+  const destinosTraspaso = (contexto?.destinos ?? []).filter((d) => d.codSuc !== almacenOrigen);
+  const tipoTraspaso = calcularTipoTraspaso(contexto, almacenOrigen, almacenDestino);
+  const puedeTraspasar = Boolean(contexto?.puedeTraspasar && contexto.origenes.length > 0);
+
+  // Cada modo tiene su propia lista de destinos: se reinicia el destino al cambiar
+  const cambiarTipo = (valor: TipoMovimiento) => {
+    setTipo(valor);
+    setError('');
+    setExito('');
+    if (valor === 'INGRESO') {
+      setAlmacenDestino(almacenes[0]?.codSuc ?? '');
+    } else if (contexto) {
+      setAlmacenDestino(
+        almacenOrigen !== contexto.almacenPrincipal
+          ? contexto.almacenPrincipal
+          : contexto.destinos.find((d) => d.codSuc !== almacenOrigen)?.codSuc ?? '',
+      );
+    }
+  };
+
+  const cambiarOrigen = (origen: string) => {
+    setAlmacenOrigen(origen);
+    if (almacenDestino === origen) {
+      setAlmacenDestino((contexto?.destinos ?? []).find((d) => d.codSuc !== origen)?.codSuc ?? '');
+    }
+  };
 
   const buscarProductos = async () => {
     const query = termino.trim();
@@ -141,42 +208,29 @@ export function MovimientosAlmacen() {
       return;
     }
 
-    const payloadItems = items.map((item) => ({
-      id_fab: item.producto.idFab!,
-      cantidad: item.cantidad,
-      ...(item.obs.trim() ? { obs: item.obs.trim() } : {}),
-    }));
-    const obs = observacion.trim() || undefined;
-
     setError('');
     setExito('');
+
+    // El traspaso se firma antes de registrarse
+    if (tipo === 'TRASPASO') {
+      setErrorFirma('');
+      setFirmaAbierta(true);
+      return;
+    }
+
     setEnviando(true);
     try {
-      const { data } = tipo === 'INGRESO'
-        ? await api.post<MovimientoMercaderiaResponse>(
-          '/productos/actualizar-mercaderia',
-          {
-            cod_suc: almacenDestino,
-            cod_usu: usuario.cod_usu,
-            obs,
-            items: payloadItems,
-          } satisfies IngresoMercaderiaRequest,
-        )
-        : await api.post<MovimientoMercaderiaResponse>(
-          '/productos/traspaso',
-          {
-            cod_suc_ori: almacenOrigen,
-            cod_suc_des: almacenDestino,
-            cod_usu: usuario.cod_usu,
-            obs,
-            items: payloadItems,
-          } satisfies TraspasoAlmacenRequest,
-        );
+      const { data } = await api.post<MovimientoMercaderiaResponse>(
+        '/productos/actualizar-mercaderia',
+        {
+          cod_suc: almacenDestino,
+          cod_usu: usuario.cod_usu,
+          obs: observacion.trim() || undefined,
+          items: payloadItems(),
+        } satisfies IngresoMercaderiaRequest,
+      );
       setExito(data.message);
-      setItems([]);
-      setObservacion('');
-      setResultados([]);
-      setTermino('');
+      limpiarFormulario();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -184,8 +238,53 @@ export function MovimientosAlmacen() {
     }
   };
 
+  const payloadItems = () => items.map((item) => ({
+    id_fab: item.producto.idFab!,
+    cantidad: item.cantidad,
+    ...(item.obs.trim() ? { obs: item.obs.trim() } : {}),
+  }));
+
+  const limpiarFormulario = () => {
+    setItems([]);
+    setObservacion('');
+    setResultados([]);
+    setTermino('');
+  };
+
+  // Se llama desde el modal de firma
+  const registrarTraspasoFirmado = async (firma: { password_firma: string; cod_usu_vendedor?: string }) => {
+    setErrorFirma('');
+    setEnviando(true);
+    try {
+      const { data } = await api.post<MovimientoMercaderiaResponse>(
+        '/productos/traspaso',
+        {
+          cod_suc_ori: almacenOrigen,
+          cod_suc_des: almacenDestino,
+          ...firma,
+          obs: observacion.trim() || undefined,
+          items: payloadItems(),
+        } satisfies TraspasoAlmacenRequest,
+      );
+      const f = data.firma;
+      setExito(
+        f
+          ? `${data.message}. Firmado por ${f.firmante.nombre || f.firmante.alias} el ${f.fechaBolivia} a las ${f.horaBolivia}.`
+          : data.message,
+      );
+      setFirmaAbierta(false);
+      limpiarFormulario();
+    } catch (requestError) {
+      // Contraseña incorrecta, sin stock, etc.: se muestra dentro del modal
+      setErrorFirma(getErrorMessage(requestError));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   const almacenNombre = (codigo: string) =>
-    almacenes.find((almacen) => almacen.codSuc === codigo)?.nomSuc ?? codigo;
+    [...almacenes, ...(contexto?.origenes ?? []), ...(contexto?.destinos ?? [])]
+      .find((almacen) => almacen.codSuc === codigo)?.nomSuc ?? codigo;
 
   return (
     <div>
@@ -209,7 +308,7 @@ export function MovimientosAlmacen() {
             <button
               key={valor}
               type="button"
-              onClick={() => { setTipo(valor); setError(''); setExito(''); }}
+              onClick={() => cambiarTipo(valor)}
               style={tipo === valor ? btnStyle('primary') : btnStyle()}
               aria-pressed={tipo === valor}
             >
@@ -235,15 +334,18 @@ export function MovimientosAlmacen() {
                   id="almacen-origen"
                   style={S.select}
                   value={almacenOrigen}
-                  onChange={(event) => setAlmacenOrigen(event.target.value)}
-                  disabled={enviando}
+                  onChange={(event) => cambiarOrigen(event.target.value)}
+                  disabled={enviando || (contexto?.origenes.length ?? 0) <= 1}
                 >
-                  {almacenes.map((almacen) => (
+                  {(contexto?.origenes ?? []).map((almacen) => (
                     <option key={almacen.codSuc} value={almacen.codSuc}>
                       {almacen.nomSuc} ({almacen.codSuc})
                     </option>
                   ))}
                 </select>
+                <p style={{ fontSize: 11, color: BRAND.gray600, margin: '4px 0 0' }}>
+                  Solo los almacenes que tienes asignados.
+                </p>
               </div>
             )}
             <div>
@@ -255,7 +357,7 @@ export function MovimientosAlmacen() {
                 onChange={(event) => setAlmacenDestino(event.target.value)}
                 disabled={enviando}
               >
-                {almacenes.map((almacen) => (
+                {(tipo === 'TRASPASO' ? destinosTraspaso : almacenes).map((almacen) => (
                   <option key={almacen.codSuc} value={almacen.codSuc}>
                     {almacen.nomSuc} ({almacen.codSuc})
                   </option>
@@ -263,6 +365,19 @@ export function MovimientosAlmacen() {
               </select>
             </div>
           </div>
+        )}
+        {tipo === 'TRASPASO' && !loadingAlmacenes && !puedeTraspasar && (
+          <p style={{ color: BRAND.red, fontSize: 12, marginBottom: 0 }} role="alert">
+            {contexto?.puedeTraspasar
+              ? 'No tienes almacenes asignados. Pide al administrador que te asigne el almacén que manejas.'
+              : 'Solo un usuario con rol "Encargado de Almacen" puede registrar traspasos.'}
+          </p>
+        )}
+        {tipo === 'TRASPASO' && puedeTraspasar && almacenOrigen && almacenDestino && almacenOrigen !== almacenDestino && (
+          <p style={{ fontSize: 12, color: BRAND.gray600, margin: '12px 0 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={badgeStyle(ETIQUETA_TIPO[tipoTraspaso].color)}>{ETIQUETA_TIPO[tipoTraspaso].texto}</span>
+            {ETIQUETA_TIPO[tipoTraspaso].ayuda}
+          </p>
         )}
         {tipo === 'TRASPASO' && almacenOrigen && almacenDestino && almacenOrigen === almacenDestino && (
           <p style={{ color: BRAND.red, fontSize: 12, marginBottom: 0 }} role="alert">
@@ -421,16 +536,34 @@ export function MovimientosAlmacen() {
           type="button"
           style={btnStyle('primary')}
           onClick={() => void registrarMovimiento()}
-          disabled={enviando || loadingAlmacenes || almacenes.length === 0 || Boolean(almacenesError)}
+          disabled={
+            enviando || loadingAlmacenes || almacenes.length === 0 || Boolean(almacenesError)
+            || (tipo === 'TRASPASO' && !puedeTraspasar)
+          }
         >
           <i className={`ti ${tipo === 'INGRESO' ? 'ti-package-import' : 'ti-transfer'}`} aria-hidden="true" />
           {enviando
             ? 'Registrando…'
             : tipo === 'INGRESO'
               ? 'Registrar ingreso de mercadería'
-              : 'Registrar traspaso'}
+              : 'Firmar y registrar traspaso'}
         </button>
       </section>
+
+      {firmaAbierta && (
+        <FirmaTraspasoModal
+          tipo={tipoTraspaso}
+          origen={almacenNombre(almacenOrigen)}
+          destino={almacenNombre(almacenDestino)}
+          totalProductos={items.length}
+          totalUnidades={items.reduce((s, i) => s + i.cantidad, 0)}
+          nombreEncargado={`${usuario?.nombre ?? ''} ${usuario?.apellido ?? ''}`.trim() || usuario?.alias || ''}
+          enviando={enviando}
+          error={errorFirma}
+          onCancel={() => setFirmaAbierta(false)}
+          onConfirm={(firma) => void registrarTraspasoFirmado(firma)}
+        />
+      )}
     </div>
   );
 }

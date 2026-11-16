@@ -8,7 +8,6 @@ const PLAZO_DEFAULT = 4;
 
 interface StockAlmacen { codSuc: string; nomSuc: string; cantidad: number; }
 interface StockFab { idFab: number; stockMotorZone: number; totalStock: number; porAlmacen: StockAlmacen[]; }
-interface DistribItem { cod_suc: string; nomSuc: string; cantidad: number; }
 
 interface ItemCarritoCredito {
   idFab: number;
@@ -21,7 +20,6 @@ interface ItemCarritoCredito {
   stockMotorZone: number;
   totalStock: number;
   stockPorAlmacen: StockAlmacen[];
-  distribucion: DistribItem[];
 }
 
 interface Props {
@@ -85,9 +83,6 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
     }
     try {
       const { data } = await api.get<StockFab>(`/productos/stock-fab/${p.idFab}`);
-      const distribucion: DistribItem[] = data.stockMotorZone > 0
-        ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: 1 }]
-        : [];
       setCarrito((prev) => [...prev, {
         idFab: p.idFab!,
         codFab: p.codFab ?? '',
@@ -99,7 +94,6 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
         stockMotorZone: data.stockMotorZone,
         totalStock: data.totalStock,
         stockPorAlmacen: data.porAlmacen,
-        distribucion,
       }]);
     } catch { flash('Error al obtener stock.', 'err'); }
     setQueryProducto(''); setProductoResults([]);
@@ -109,12 +103,7 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
     if (nuevaCantidad < 1) return;
     setCarrito((prev) => prev.map((item) => {
       if (item.idFab !== idFab) return item;
-      const distribucion = nuevaCantidad <= item.stockMotorZone
-        ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: nuevaCantidad }]
-        : item.stockMotorZone > 0
-        ? [{ cod_suc: COD_SUC_MOTORZONE, nomSuc: 'MOTOR ZONE', cantidad: item.stockMotorZone }]
-        : [];
-      return { ...item, cantidad: nuevaCantidad, importe: nuevaCantidad * item.precioUnitario, distribucion };
+      return { ...item, cantidad: nuevaCantidad, importe: nuevaCantidad * item.precioUnitario };
     }));
   };
 
@@ -134,13 +123,13 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
     if (!clienteSel) { flash('Seleccioná un cliente habilitado para crédito.', 'err'); return; }
     if (!carrito.length) { flash('El carrito está vacío.', 'err'); return; }
     for (const item of carrito) {
-      if (item.cantidad > item.totalStock) {
-        flash(`Stock insuficiente para "${item.descPro}". Disponible: ${item.totalStock}`, 'err');
-        return;
-      }
-      const totalDistrib = item.distribucion.reduce((s, d) => s + d.cantidad, 0);
-      if (totalDistrib !== item.cantidad) {
-        flash(`La distribución de "${item.descPro}" no coincide.`, 'err');
+      // Solo se vende desde MOTOR ZONE (igual que la venta al contado)
+      if (item.cantidad > item.stockMotorZone) {
+        flash(
+          `Solo hay ${item.stockMotorZone} de "${item.descPro}" en MOTOR ZONE. ` +
+          'Pide al encargado del almacén un traspaso a MOTOR ZONE antes de vender.',
+          'err',
+        );
         return;
       }
     }
@@ -158,7 +147,6 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
           cod_fab: i.codFab,
           cantidad: i.cantidad,
           precio_cre: i.precioUnitario * tipoCambio,
-          distribucion: i.distribucion.map((d) => ({ cod_suc: d.cod_suc, cantidad: d.cantidad })),
         })),
       });
       flash(`Crédito ${data.cod_cre} registrado correctamente.`);
@@ -278,7 +266,10 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
                     <tr key={item.idFab}>
                       <td>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{item.descPro}</div>
-                        <div style={{ fontSize: 10, color: '#888' }}>MZ: {item.stockMotorZone} · Total: {item.totalStock}</div>
+                        <div style={{ fontSize: 10, color: item.cantidad > item.stockMotorZone ? '#D72626' : '#888' }}>
+                          MZ: {item.stockMotorZone} · Total: {item.totalStock}
+                          {item.cantidad > item.stockMotorZone && ' · falta en MOTOR ZONE (requiere traspaso)'}
+                        </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <input type="number" min={1} value={item.cantidad}

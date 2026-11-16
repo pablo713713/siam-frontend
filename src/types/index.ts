@@ -209,12 +209,40 @@ export interface IngresoMercaderiaRequest {
   items: ItemMovimientoMercaderia[];
 }
 
+// Tipo de traspaso: lo calcula el backend según origen y destino
+export type TipoTraspaso = 'INGRESO_TIENDA' | 'SALIDA_VENTA' | 'ENTRE_ALMACENES';
+
 export interface TraspasoAlmacenRequest {
   cod_suc_ori: string;
   cod_suc_des: string;
-  cod_usu: string;
+  // El encargado que registra se toma del token en el backend
+  password_firma: string;
+  cod_usu_vendedor?: string; // solo en salidas a venta
   obs?: string;
   items: ItemMovimientoMercaderia[];
+}
+
+export interface ContextoTraspaso {
+  puedeTraspasar: boolean;
+  origenes: Almacen[];      // almacenes asignados al usuario
+  destinos: Almacen[];
+  almacenPrincipal: string; // 00011 MOTOR ZONE
+  almacenesTienda: string[];
+}
+
+export interface VendedorFirma {
+  codUsu: string;
+  nomUsu: string | null;
+  apUsu: string | null;
+  alias: string;
+}
+
+export interface FirmaTraspaso {
+  idAutorizacion: number | null;
+  firmante: { codUsu: string; alias: string; nombre: string };
+  fechaBolivia: string | null;
+  horaBolivia: string | null;
+  estado: 'PENDIENTE' | 'COMPLETADO' | 'VENDIDO' | 'DEVUELTO';
 }
 
 export interface MovimientoMercaderiaResponse {
@@ -222,6 +250,8 @@ export interface MovimientoMercaderiaResponse {
   codRemEntrada: string;
   codRemSalida?: string;
   almacen?: string;
+  tipo?: TipoTraspaso;
+  firma?: FirmaTraspaso;
 }
 
 export type AlertaCredito = 'ok' | 'proximo' | 'vencido';
