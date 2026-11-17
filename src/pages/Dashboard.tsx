@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer, Cell,
+  ResponsiveContainer, Cell,
 } from 'recharts';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { BRAND, S, btnStyle } from '../components/ui/tokens';
+import { BRAND, S } from '../components/ui/tokens';
 import type { IngresosResponse, GananciaResponse } from '../types';
 import css from './Dashboard.module.css';
 
@@ -181,7 +181,6 @@ function GananciaChart({ ganancia, labelRango }: GananciaChartProps) {
               width={72}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: BRAND.gray100 }} />
-            <Legend hide />
 
             <Bar dataKey="Ingresos" radius={[4, 4, 0, 0]} maxBarSize={72}>
               <Cell fill={BRAND.blue} />

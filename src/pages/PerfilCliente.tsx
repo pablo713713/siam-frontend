@@ -233,7 +233,6 @@ export function PerfilCliente() {
   };
 
   // ── Crédito del cliente (viene del search) ──
-  const clienteActual = resultados.length === 0 && perfil ? null : null; // del search
   // El indicador de crédito viene de la extensión (limite_credito) o del campo CREDITO_MAXIMO en search
   const puedeCredito =
     perfil?.extension?.limite_credito != null && Number(perfil.extension.limite_credito) > 0;

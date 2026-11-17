@@ -7,7 +7,6 @@ import {
   fmtDateTime,
   fmtMoney,
   nombreCliente,
-  estadoBadge,
 } from './VentasRealizadas';
 
 interface VentaResumen {
