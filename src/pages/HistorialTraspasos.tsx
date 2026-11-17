@@ -2,6 +2,9 @@ import { Fragment, useEffect, useState } from 'react';
 import axios from 'axios';
 import api from '../api/axios';
 import { BRAND, S, badgeStyle, btnStyle } from '../components/ui/tokens';
+import { DevolucionTraspasoModal } from '../components/traspasos/DevolucionTraspasoModal';
+import { EncargadosModal } from '../components/traspasos/EncargadosModal';
+import { useAuth } from '../context/AuthContext';
 import {
   ESTADO_TRASPASO_TEXTO,
   TIPO_TRASPASO_TEXTO,
@@ -37,6 +40,7 @@ const COLOR_TIPO: Record<TipoTraspaso, 'amber' | 'blue' | 'gray'> = {
   SALIDA_VENTA: 'amber',
   INGRESO_TIENDA: 'blue',
   ENTRE_ALMACENES: 'gray',
+  DEVOLUCION: 'gray',
 };
 
 const COLOR_ESTADO: Record<EstadoTraspaso, 'amber' | 'green' | 'gray' | 'blue'> = {
@@ -81,6 +85,10 @@ export function HistorialTraspasos() {
   const [error, setError] = useState('');
   const [abierto, setAbierto] = useState<number | null>(null);
   const [exportando, setExportando] = useState<'listado' | number | null>(null);
+  const { usuario } = useAuth();
+  const [aviso, setAviso] = useState('');
+  const [verEncargados, setVerEncargados] = useState(false);
+  const [devolviendo, setDevolviendo] = useState<TraspasoHistorial | null>(null);
 
   useEffect(() => {
     api.get<FiltrosHistorialTraspasos>('/productos/traspasos/filtros')
@@ -107,6 +115,7 @@ export function HistorialTraspasos() {
   const consultar = (f: Filtros, page: number) => {
     setCargando(true);
     setError('');
+    setAviso('');
     setAbierto(null);
     setPagina(page);
     setAplicados(f);
@@ -171,6 +180,14 @@ export function HistorialTraspasos() {
     }
   };
 
+  // "Vendido" puede incluir una parte devuelta: se aclara en la etiqueta
+  const textoEstado = (t: TraspasoHistorial) => {
+    const base = ESTADO_TRASPASO_TEXTO[t.estado] ?? t.estado;
+    return t.estado === 'VENDIDO' && t.items.some((it) => (it.devuelta ?? 0) > 0)
+      ? `${base} (con devolución)`
+      : base;
+  };
+
   const traspasos = resultado?.data ?? [];
   const meta = resultado?.meta;
 
@@ -184,18 +201,25 @@ export function HistorialTraspasos() {
             {alcance === 'MIS_ALMACENES' && ' Ves solo los traspasos que salieron de tus almacenes.'}
           </p>
         </div>
-        <button
-          type="button"
-          style={btnStyle('secondary')}
-          onClick={() => void exportarListado()}
-          disabled={exportando !== null || cargando || !meta || meta.total === 0}
-        >
-          <i className="ti ti-file-type-pdf" aria-hidden="true" />
-          {exportando === 'listado' ? 'Generando…' : 'Exportar listado (PDF)'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button type="button" style={btnStyle('ghost')} onClick={() => setVerEncargados(true)}>
+            <i className="ti ti-users" aria-hidden="true" />
+            Mostrar encargados
+          </button>
+          <button
+            type="button"
+            style={btnStyle('secondary')}
+            onClick={() => void exportarListado()}
+            disabled={exportando !== null || cargando || !meta || meta.total === 0}
+          >
+            <i className="ti ti-file-type-pdf" aria-hidden="true" />
+            {exportando === 'listado' ? 'Generando…' : 'Exportar listado (PDF)'}
+          </button>
+        </div>
       </header>
 
       {error && <div style={S.errorBanner} role="alert">{error}</div>}
+      {aviso && <div style={S.successBanner} role="status">{aviso}</div>}
 
       <form style={S.card} onSubmit={buscar} aria-label="Filtros">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, alignItems: 'end' }}>
@@ -285,7 +309,7 @@ export function HistorialTraspasos() {
                         <td style={S.td}>{t.nombreEncargado}</td>
                         <td style={S.td}>{t.nombreFirmante}</td>
                         <td style={{ ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{t.totalUnidades}</td>
-                        <td style={S.td}><span style={badgeStyle(COLOR_ESTADO[t.estado] ?? 'gray')}>{ESTADO_TRASPASO_TEXTO[t.estado] ?? t.estado}</span></td>
+                        <td style={S.td}><span style={badgeStyle(COLOR_ESTADO[t.estado] ?? 'gray')}>{textoEstado(t)}</span></td>
                         <td style={{ ...S.td, whiteSpace: 'nowrap', textAlign: 'right' }}>
                           <button
                             type="button"
@@ -318,26 +342,70 @@ export function HistorialTraspasos() {
                               <span>Registró: <strong style={{ color: BRAND.black }}>{t.nombreEncargado}</strong> ({t.codUsuEncargado})</span>
                               <span>Firmó: <strong style={{ color: BRAND.black }}>{t.nombreFirmante}</strong> ({t.codUsuFirmante})</span>
                             </div>
-                            <table style={{ ...S.table, background: BRAND.white, border: `1px solid ${BRAND.gray200}` }}>
-                              <thead>
-                                <tr>
-                                  <th style={S.th}>Código de fábrica</th>
-                                  <th style={S.th}>Producto</th>
-                                  <th style={S.th}>Observación</th>
-                                  <th style={{ ...S.th, textAlign: 'right' }}>Cantidad</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {t.items.map((it) => (
-                                  <tr key={it.idFab}>
-                                    <td style={S.td}>{it.codFab}</td>
-                                    <td style={S.td}>{it.descPro ?? '—'}</td>
-                                    <td style={{ ...S.td, color: BRAND.gray600 }}>{it.obs ?? ''}</td>
-                                    <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{it.cantidad}</td>
-                                  </tr>
+                            {(() => {
+                              // En salidas a venta se muestra cuánto se vendió, se devolvió y falta
+                              const conSeguimiento = t.items.some((it) => it.pendiente !== null);
+                              const num: React.CSSProperties = { ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+                              return (
+                                <table style={{ ...S.table, background: BRAND.white, border: `1px solid ${BRAND.gray200}` }}>
+                                  <thead>
+                                    <tr>
+                                      <th style={S.th}>Código de fábrica</th>
+                                      <th style={S.th}>Producto</th>
+                                      <th style={S.th}>Observación</th>
+                                      <th style={{ ...S.th, textAlign: 'right' }}>{conSeguimiento ? 'Se llevó' : 'Cantidad'}</th>
+                                      {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Vendió</th>}
+                                      {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Devolvió</th>}
+                                      {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Pendiente</th>}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {t.items.map((it) => (
+                                      <tr key={it.idFab}>
+                                        <td style={S.td}>{it.codFab}</td>
+                                        <td style={S.td}>{it.descPro ?? '—'}</td>
+                                        <td style={{ ...S.td, color: BRAND.gray600 }}>{it.obs ?? ''}</td>
+                                        <td style={{ ...num, fontWeight: 700 }}>{it.cantidad}</td>
+                                        {conSeguimiento && <td style={num}>{it.vendida ?? '—'}</td>}
+                                        {conSeguimiento && <td style={num}>{it.devuelta ?? '—'}</td>}
+                                        {conSeguimiento && (
+                                          <td style={{ ...num, fontWeight: 700, color: (it.pendiente ?? 0) > 0 ? BRAND.amber : BRAND.gray400 }}>
+                                            {it.pendiente ?? '—'}
+                                          </td>
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              );
+                            })()}
+                            {t.documentos.length > 0 && (
+                              <p style={{ fontSize: 12, color: BRAND.gray600, margin: '10px 0 0' }}>
+                                Salió en:{' '}
+                                {t.documentos.map((d, i) => (
+                                  <span key={`${d.tipoDoc}-${d.codDoc}`} style={{ color: BRAND.black }}>
+                                    {i > 0 && ', '}
+                                    {d.tipoDoc === 'CREDITO' ? 'crédito' : 'venta'} <strong>{d.codDoc}</strong> ({d.cantidad} unid.)
+                                  </span>
                                 ))}
-                              </tbody>
-                            </table>
+                              </p>
+                            )}
+                            {t.tipo === 'DEVOLUCION' && (
+                              <p style={{ fontSize: 12, color: BRAND.gray600, margin: '10px 0 0' }}>
+                                Devolución de una salida a venta: la mercadería volvió a {t.nomSucDes}.
+                              </p>
+                            )}
+                            {t.puedeDevolver && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
+                                <button type="button" style={btnStyle('primary', 'sm')} onClick={() => setDevolviendo(t)}>
+                                  <i className="ti ti-arrow-back-up" aria-hidden="true" />
+                                  Registrar devolución
+                                </button>
+                                <span style={{ fontSize: 12, color: BRAND.gray600 }}>
+                                  Lo que no se vendió vuelve a {t.nomSucOri}.
+                                </span>
+                              </div>
+                            )}
                             {t.obs && (
                               <p style={{ fontSize: 12, color: BRAND.gray600, margin: '10px 0 0' }}>
                                 Observación: <span style={{ color: BRAND.black }}>{t.obs}</span>
@@ -370,6 +438,22 @@ export function HistorialTraspasos() {
           </div>
         )}
       </section>
+
+      {verEncargados && <EncargadosModal onClose={() => setVerEncargados(false)} />}
+
+      {devolviendo && (
+        <DevolucionTraspasoModal
+          traspaso={devolviendo}
+          nombreUsuario={`${usuario?.nombre ?? ''} ${usuario?.apellido ?? ''}`.trim() || usuario?.alias || ''}
+          onClose={() => setDevolviendo(null)}
+          onRegistrada={(mensaje) => {
+            setDevolviendo(null);
+            // Recarga la misma página para ver el estado actualizado y la devolución
+            consultar({ ...aplicados }, pagina);
+            setAviso(mensaje);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
-import type { Rol, UsuarioRolResponse } from '../types';
+import type { Almacen, Rol, UsuarioRolResponse } from '../types';
+
+// Roles que pueden registrar traspasos: a estos usuarios se les asignan almacenes
+const ROLES_CON_ALMACEN = ['Encargado de Almacen', 'Administrador'];
 
 interface UsuarioSearch {
   codUsu: string;
@@ -23,6 +26,12 @@ export function AsignarRol() {
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Almacenes del encargado: desde cuáles puede registrar traspasos
+  const [almacenes, setAlmacenes]               = useState<Almacen[]>([]);
+  const [almacenesUsuario, setAlmacenesUsuario] = useState<Almacen[]>([]);
+  const [selectedAlmacen, setSelectedAlmacen]   = useState('');
+  const [guardandoAlmacen, setGuardandoAlmacen] = useState(false);
+
   const flash = (text: string, type: 'ok' | 'err' = 'ok') => {
     setMsg({ text, type });
     setTimeout(() => setMsg(null), 4000);
@@ -32,7 +41,52 @@ export function AsignarRol() {
     api.get<Rol[]>('/roles')
       .then(({ data }) => setRoles(Array.isArray(data) ? data.filter((r) => r.activo) : []))
       .catch(() => {});
+    // Almacenes habilitados para movimientos (los únicos que sirven como origen)
+    api.get<Almacen[]>('/productos/almacenes-disponibles')
+      .then(({ data }) => setAlmacenes(Array.isArray(data) ? data : []))
+      .catch(() => {});
   }, []);
+
+  const cargarAlmacenesUsuario = async (codUsu: string) => {
+    try {
+      const { data } = await api.get<Almacen[]>(`/almacenes/usuario/${codUsu}`);
+      setAlmacenesUsuario(Array.isArray(data) ? data : []);
+    } catch {
+      setAlmacenesUsuario([]);
+    }
+  };
+
+  const mensajeApi = (err: unknown, porDefecto: string) =>
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? porDefecto;
+
+  const handleAsignarAlmacen = async () => {
+    if (!usuarioSel || !selectedAlmacen) return;
+    setGuardandoAlmacen(true);
+    try {
+      await api.post('/almacenes/asignar', { cod_usu: usuarioSel.codUsu, cod_suc: selectedAlmacen });
+      flash('Almacén asignado correctamente.');
+      setSelectedAlmacen('');
+      await cargarAlmacenesUsuario(usuarioSel.codUsu);
+    } catch (err: unknown) {
+      flash(mensajeApi(err, 'Error al asignar el almacén.'), 'err');
+    } finally {
+      setGuardandoAlmacen(false);
+    }
+  };
+
+  const handleQuitarAlmacen = async (codSuc: string) => {
+    if (!usuarioSel) return;
+    setGuardandoAlmacen(true);
+    try {
+      await api.delete(`/almacenes/usuario/${usuarioSel.codUsu}/almacen/${codSuc}`);
+      flash('Almacén removido correctamente.');
+      await cargarAlmacenesUsuario(usuarioSel.codUsu);
+    } catch (err: unknown) {
+      flash(mensajeApi(err, 'Error al remover el almacén.'), 'err');
+    } finally {
+      setGuardandoAlmacen(false);
+    }
+  };
 
   const buscarUsuarios = async (val: string) => {
     if (debounce.current) clearTimeout(debounce.current);
@@ -56,7 +110,9 @@ export function AsignarRol() {
     setUsuarioSel(u);
     setUsuariosBusqueda([]);
     setSelectedRol('');
+    setSelectedAlmacen('');
     setLoadingRoles(true);
+    void cargarAlmacenesUsuario(u.codUsu);
     try {
       const { data } = await api.get<UsuarioRolResponse[]>(`/roles/usuario/${u.codUsu}`);
       setRolesUsuario(Array.isArray(data) ? data : []);
@@ -98,6 +154,12 @@ export function AsignarRol() {
   const rolSeleccionado = roles.find((r) => r.id === parseInt(selectedRol));
   const rolesAsignados = rolesUsuario.map((ur) => ur.id_rol);
   const rolesDisponibles = roles.filter((r) => !rolesAsignados.includes(r.id));
+
+  // La sección de almacenes aparece cuando el usuario tiene un rol que traspasa
+  const manejaAlmacenes = rolesUsuario.some((ur) => ROLES_CON_ALMACEN.includes(ur.rol.nombre));
+  const codigosAsignados = almacenesUsuario.map((a) => a.codSuc);
+  const codigosHabilitados = almacenes.map((a) => a.codSuc);
+  const almacenesDisponibles = almacenes.filter((a) => !codigosAsignados.includes(a.codSuc));
 
   return (
     <div>
@@ -270,6 +332,85 @@ export function AsignarRol() {
             <div style={{ fontSize: 13, color: BRAND.gray600, marginTop: 16 }}>
               Este usuario ya tiene todos los roles disponibles asignados.
             </div>
+          )}
+
+          {/* Almacenes que maneja: solo para quienes pueden registrar traspasos */}
+          {!loadingRoles && manejaAlmacenes && (
+            <>
+              <div style={{ ...S.divider, marginTop: 20 }} />
+              <div style={S.label}>Almacenes que maneja</div>
+              <div style={{ fontSize: 12, color: BRAND.gray600, marginBottom: 8 }}>
+                Solo puede registrar traspasos desde estos almacenes.
+              </div>
+              {almacenesUsuario.length === 0 ? (
+                <div style={{ fontSize: 13, color: BRAND.gray400, marginBottom: 12 }}>Sin almacenes asignados</div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                  {almacenesUsuario.map((a) => {
+                    const habilitado = codigosHabilitados.length === 0 || codigosHabilitados.includes(a.codSuc);
+                    return (
+                      <span
+                        key={a.codSuc}
+                        title={habilitado ? undefined : 'Este almacén no está habilitado para movimientos'}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          background: habilitado ? BRAND.blueSubtle : BRAND.gray100,
+                          color: habilitado ? BRAND.blue : BRAND.gray600,
+                        }}
+                      >
+                        {a.nomSuc} ({a.codSuc}){!habilitado && ' · no habilitado'}
+                        <button
+                          onClick={() => handleQuitarAlmacen(a.codSuc)}
+                          disabled={guardandoAlmacen}
+                          title="Quitar almacén"
+                          aria-label={`Quitar ${a.nomSuc}`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: 16, height: 16, borderRadius: '50%',
+                            border: 'none', background: habilitado ? BRAND.blue : BRAND.gray600, color: BRAND.white,
+                            cursor: 'pointer', padding: 0, fontSize: 10, lineHeight: 1,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              {almacenesDisponibles.length > 0 ? (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <label style={S.label} htmlFor="asignar-almacen">Agregar almacén</label>
+                    <select
+                      id="asignar-almacen"
+                      style={S.select}
+                      value={selectedAlmacen}
+                      onChange={(e) => setSelectedAlmacen(e.target.value)}
+                    >
+                      <option value="">— Seleccione un almacén —</option>
+                      {almacenesDisponibles.map((a) => (
+                        <option key={a.codSuc} value={a.codSuc}>{a.nomSuc} ({a.codSuc})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    style={btnStyle('primary')}
+                    onClick={handleAsignarAlmacen}
+                    disabled={!selectedAlmacen || guardandoAlmacen}
+                  >
+                    <i className="ti ti-building-warehouse" aria-hidden="true" />
+                    Asignar almacén
+                  </button>
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, color: BRAND.gray600 }}>
+                  Este usuario ya tiene todos los almacenes habilitados.
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
