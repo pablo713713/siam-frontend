@@ -6,6 +6,7 @@ export interface Usuario {
   roles: string[];
   id_roles: number[];
   almacenes: Almacen[];
+  cod_emp?: string; // empresa del usuario (viene en el token)
 }
 
 export interface AuthResponse {

@@ -1,8 +1,5 @@
-import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../api/axios';
-import type { Producto } from '../../types';
 import css from './Topbar.module.css';
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -18,46 +15,10 @@ const ROUTE_LABELS: Record<string, string> = {
   '/tipo-cambio': 'Tipo de Cambio',
 };
 
-interface TopbarProps {
-  onQuickSearch: (q: string) => void;
-}
-
-export function Topbar({ onQuickSearch }: TopbarProps) {
+export function Topbar() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  const [query, setQuery]         = useState('');
-  const [results, setResults]     = useState<Producto[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showDrop, setShowDrop]   = useState(false);
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleChange = (val: string) => {
-    setQuery(val);
-    if (debounce.current) clearTimeout(debounce.current);
-    if (!val.trim()) { setResults([]); setShowDrop(false); return; }
-    setSearching(true);
-    debounce.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get<Producto[]>('/productos/search', {
-          params: { q: val.trim(), limit: 8 },
-        });
-        setResults(Array.isArray(data) ? data : []);
-        setShowDrop(true);
-      } catch {
-        setResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
-  };
-
-  const goToAdvanced = () => {
-    onQuickSearch(query);
-    setShowDrop(false);
-    navigate('/busqueda');
-  };
 
   const initials = usuario
     ? `${usuario.nombre?.[0] ?? ''}${usuario.apellido?.[0] ?? ''}`.toUpperCase()

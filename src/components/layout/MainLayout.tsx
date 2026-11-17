@@ -19,7 +19,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className={css.shell}>
       <Sidebar />
       <div className={css.content}>
-        <Topbar onQuickSearch={(q) => setQuickSearch(q)} />
+        <Topbar />
         <main className={css.main}>
           {childWithProps}
         </main>
