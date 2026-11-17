@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
-import type { Producto, AdvancedSearchParams } from '../types';
+import type { Producto, AdvancedSearchParams, ProductoDetalle } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { EditarProductoModal } from '../components/productos/EditarProductoModal';
 import { useNavigate } from 'react-router-dom';
 import css from './Busqueda.module.css';
 
@@ -31,6 +33,11 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   const [loading, setLoading]   = useState(false);
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+  // Editar productos: solo Administrador (el backend también lo exige)
+  const esAdmin = usuario?.roles?.includes('Administrador') ?? false;
+  const [editando, setEditando] = useState(false);
+  const [aviso, setAviso] = useState('');
 
   const [productoSel, setProductoSel]         = useState<Producto | null>(null);
   const [resumen, setResumen]                 = useState<ResumenProducto | null>(null);
@@ -79,6 +86,22 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
   };
 
   const cerrarPanel = () => { setProductoSel(null); setResumen(null); };
+
+  // Tras editar: refleja los datos nuevos en la tabla y en el panel sin volver a buscar
+  const productoEditado = (p: ProductoDetalle, mensaje: string) => {
+    const actualizar = (r: Producto): Producto => r.idFab !== p.idFab ? r : {
+      ...r,
+      descPro: p.descPro, marca: p.marca, modelo: p.modelo, codigo: p.codigoTipo,
+      barra: p.barra, codAnt: p.codAnt,
+      plisPro: p.plisPro, pminPro: p.pminPro, pmayPro: p.pmayPro,
+      plisBs: p.plisBs, pminBs: p.pminBs, pmayBs: p.pmayBs,
+    };
+    setResults((prev) => prev.map(actualizar));
+    setProductoSel((prev) => (prev ? actualizar(prev) : prev));
+    setEditando(false);
+    setAviso(mensaje);
+    setTimeout(() => setAviso(''), 6000);
+  };
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
@@ -108,6 +131,8 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
           </div>
         </div>
       </div>
+
+      {aviso && <div style={S.successBanner} role="status">{aviso}</div>}
 
       {}
       {searched && (
@@ -210,10 +235,17 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             background: BRAND.gray50, flexShrink: 0,
           }}>
             <span style={{ fontWeight: 700, fontSize: 13 }}>{productoSel.descPro}</span>
-            <button onClick={cerrarPanel} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: BRAND.gray600, fontSize: 18, padding: 4, lineHeight: 1,
-            }} aria-label="Cerrar panel">x</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {esAdmin && productoSel.idFab != null && (
+                <button type="button" style={btnStyle('secondary', 'sm')} onClick={() => setEditando(true)}>
+                  <i className="ti ti-edit" aria-hidden="true" /> Editar información
+                </button>
+              )}
+              <button onClick={cerrarPanel} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: BRAND.gray600, fontSize: 18, padding: 4, lineHeight: 1,
+              }} aria-label="Cerrar panel">x</button>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, overflow: 'hidden' }}>
@@ -273,6 +305,15 @@ export function Busqueda({ quickSearch = '', setQuickSearch }: BusquedaProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {editando && productoSel?.idFab != null && (
+        <EditarProductoModal
+          idFab={productoSel.idFab}
+          descripcion={productoSel.descPro}
+          onClose={() => setEditando(false)}
+          onGuardado={productoEditado}
+        />
       )}
     </div>
   );

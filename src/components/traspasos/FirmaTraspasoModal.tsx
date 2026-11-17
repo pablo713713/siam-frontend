@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { BRAND, S, badgeStyle, btnStyle } from '../ui/tokens';
-import type { TipoTraspaso, VendedorFirma } from '../../types';
+import type { TipoTraspasoRegistro as TipoTraspaso, VendedorFirma } from '../../types';
 
 interface Props {
   tipo: TipoTraspaso;

@@ -20,6 +20,7 @@ import { Devoluciones } from './pages/Devoluciones';
 import { Creditos } from './pages/Creditos';
 import { MovimientosAlmacen } from './pages/MovimientosAlmacen';
 import { HistorialTraspasos } from './pages/HistorialTraspasos';
+import { HistorialProductos } from './pages/HistorialProductos';
 import { CreditosAbiertos } from './pages/CreditosAbiertos';
 
 
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />
           <Route path="/kardex" element={<PrivateRoute><MainLayout><Kardex /></MainLayout></PrivateRoute>} />
           <Route path="/productos/movimientos" element={<PrivateRoute><MainLayout><MovimientosAlmacen /></MainLayout></PrivateRoute>} />
+          <Route path="/productos/historial" element={<RoleRoute role="Administrador"><MainLayout><HistorialProductos /></MainLayout></RoleRoute>} />
           <Route path="/productos/traspasos" element={<RoleRoute role={['Administrador', 'Encargado de Almacen']}><MainLayout><HistorialTraspasos /></MainLayout></RoleRoute>} />
           <Route path="/productos/:id" element={<PrivateRoute><MainLayout><DetalleProducto /></MainLayout></PrivateRoute>} />
           <Route path="/productos/:id/kardex" element={<PrivateRoute><MainLayout><KardexProducto /></MainLayout></PrivateRoute>} />

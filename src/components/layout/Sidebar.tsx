@@ -22,6 +22,7 @@ const NAV: NavItem[] = [
   { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },
   { icon: 'ti-transfer',         label: 'Movimientos de almacén', to: '/productos/movimientos' },
   { icon: 'ti-history',          label: 'Historial de traspasos', to: '/productos/traspasos', anyRole: ['Administrador', 'Encargado de Almacen'] },
+  { icon: 'ti-file-pencil',      label: 'Historial de productos', to: '/productos/historial', requiredRole: 'Administrador' },
   { section: 'Clientes' },
   { icon: 'ti-users',            label: 'Gestion de Clientes', to: '/clientes'    },
   { section: 'Ventas' },

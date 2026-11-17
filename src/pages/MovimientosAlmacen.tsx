@@ -4,11 +4,12 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { BRAND, S, badgeStyle, btnStyle } from '../components/ui/tokens';
 import { FirmaTraspasoModal } from '../components/traspasos/FirmaTraspasoModal';
+import { NuevoProductoModal } from '../components/productos/NuevoProductoModal';
 import type {
   Almacen,
   ContextoTraspaso,
   IngresoMercaderiaRequest,
-  TipoTraspaso,
+  TipoTraspasoRegistro as TipoTraspaso,
   MovimientoMercaderiaResponse,
   Producto,
   TraspasoAlmacenRequest,
@@ -88,6 +89,13 @@ export function MovimientosAlmacen() {
   const [contexto, setContexto] = useState<ContextoTraspaso | null>(null);
   const [firmaAbierta, setFirmaAbierta] = useState(false);
   const [errorFirma, setErrorFirma] = useState('');
+  const [nuevoProductoAbierto, setNuevoProductoAbierto] = useState(false);
+  const [busquedaHecha, setBusquedaHecha] = useState(false);
+
+  // Registrar productos nuevos: quienes manejan mercadería (lo valida el backend)
+  const puedeCrearProducto = Boolean(
+    usuario?.roles?.some((r) => r === 'Administrador' || r === 'Encargado de Almacen'),
+  );
 
   useEffect(() => {
     const cargarAlmacenes = async () => {
@@ -154,6 +162,7 @@ export function MovimientosAlmacen() {
         { params: { q: query, page: 1, limit: LIMIT } },
       );
       setResultados(data.data ?? []);
+      setBusquedaHecha(true);
     } catch (requestError) {
       setResultados([]);
       setError(getErrorMessage(requestError));
@@ -249,6 +258,7 @@ export function MovimientosAlmacen() {
     setObservacion('');
     setResultados([]);
     setTermino('');
+    setBusquedaHecha(false);
   };
 
   // Se llama desde el modal de firma
@@ -397,7 +407,7 @@ export function MovimientosAlmacen() {
             <input
               id="producto-busqueda"
               value={termino}
-              onChange={(event) => setTermino(event.target.value)}
+              onChange={(event) => { setTermino(event.target.value); setBusquedaHecha(false); }}
               style={S.input}
               placeholder="Buscar producto"
               disabled={buscando || enviando}
@@ -447,8 +457,28 @@ export function MovimientosAlmacen() {
         )}
         {!buscando && termino.trim() && resultados.length === 0 && (
           <p style={{ color: BRAND.gray600, fontSize: 13, marginBottom: 0 }}>
-            Sin resultados. Usa el botón Buscar para consultar productos.
+            {busquedaHecha
+              ? 'No se encontró ningún producto con ese texto.'
+              : 'Usa el botón Buscar para consultar productos.'}
           </p>
+        )}
+
+        {/* Mercadería nueva que todavía no existe en el sistema */}
+        {tipo === 'INGRESO' && busquedaHecha && puedeCrearProducto && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 14, paddingTop: 14, borderTop: `1px solid ${BRAND.gray200}` }}>
+            <span style={{ fontSize: 12, color: BRAND.gray600 }}>
+              ¿Llegó un producto que no está en la lista?
+            </span>
+            <button
+              type="button"
+              style={btnStyle('secondary', 'sm')}
+              onClick={() => setNuevoProductoAbierto(true)}
+              disabled={enviando}
+            >
+              <i className="ti ti-plus" aria-hidden="true" />
+              Registrar nuevo producto
+            </button>
+          </div>
         )}
       </section>
 
@@ -549,6 +579,17 @@ export function MovimientosAlmacen() {
               : 'Firmar y registrar traspaso'}
         </button>
       </section>
+
+      {nuevoProductoAbierto && (
+        <NuevoProductoModal
+          onClose={() => setNuevoProductoAbierto(false)}
+          onCreado={(producto) => {
+            setNuevoProductoAbierto(false);
+            agregarProducto(producto);
+            setExito(`Producto "${producto.descPro}" registrado y agregado al ingreso. Indica la cantidad que llegó.`);
+          }}
+        />
+      )}
 
       {firmaAbierta && (
         <FirmaTraspasoModal

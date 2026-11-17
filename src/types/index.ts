@@ -210,7 +210,9 @@ export interface IngresoMercaderiaRequest {
 }
 
 // Tipo de traspaso: lo calcula el backend según origen y destino
-export type TipoTraspaso = 'INGRESO_TIENDA' | 'SALIDA_VENTA' | 'ENTRE_ALMACENES';
+export type TipoTraspaso = 'INGRESO_TIENDA' | 'SALIDA_VENTA' | 'ENTRE_ALMACENES' | 'DEVOLUCION';
+// Tipos que se registran desde Movimientos (la devolución se registra desde el historial)
+export type TipoTraspasoRegistro = Exclude<TipoTraspaso, 'DEVOLUCION'>;
 
 export interface TraspasoAlmacenRequest {
   cod_suc_ori: string;
@@ -254,6 +256,16 @@ export interface ItemTraspasoHistorial {
   descPro: string | null;
   cantidad: number;
   obs: string | null;
+  // Solo en salidas a venta con seguimiento; en los demás traspasos, null
+  vendida: number | null;
+  devuelta: number | null;
+  pendiente: number | null;
+}
+
+export interface DocumentoTraspaso {
+  tipoDoc: 'VENTA' | 'CREDITO';
+  codDoc: string;
+  cantidad: number;
 }
 
 export interface TraspasoHistorial {
@@ -275,6 +287,75 @@ export interface TraspasoHistorial {
   obs: string | null;
   totalUnidades: number;
   items: ItemTraspasoHistorial[];
+  idTaOrigen: number | null;      // en una devolución: el traspaso que se devolvió
+  codVenta: string | null;
+  documentos: DocumentoTraspaso[]; // ventas o créditos en que salió el producto
+  puedeDevolver: boolean;          // el usuario puede registrar la devolución
+}
+
+export interface EncargadosAlmacen {
+  codSuc: string;
+  nomSuc: string;
+  encargados: { codUsu: string; nombre: string; alias: string; rol: string }[];
+}
+
+// ─── Alta y edición de productos ────────────────────────────────────────────
+export interface ProductoDetalle {
+  idPro: number;
+  idFab: number;
+  codPro: string | null;
+  codFab: string | null;
+  descPro: string;
+  codProv: string;
+  marca: string | null;
+  codMod: number;
+  modelo: string | null;
+  codigoTipo: string;
+  tipo: string | null;
+  unidad: string | null;
+  barra: string;
+  codAnt: string;
+  comentario: string;
+  plisPro: number;
+  pminPro: number;
+  pmayPro: number;
+  plisBs: number;
+  pminBs: number;
+  pmayBs: number;
+  cifCbba: number;
+}
+
+export interface CatalogosProducto {
+  proveedores: { codProv: string; nomProv: string }[];
+  tipos: { codigo: string; descripcion: string | null }[];
+  modelos: { codMod: number; nomModelo: string; nomMarca: string | null }[];
+}
+
+export interface CambioProducto {
+  campo: string;
+  antes: string | number | null;
+  despues: string | number | null;
+}
+
+export interface AuditoriaProducto {
+  idAuditoria: number;
+  accion: 'CREAR' | 'EDITAR';
+  idPro: number;
+  idFab: number;
+  codFab: string;
+  descPro: string;
+  descProActual: string;
+  fecha: string;
+  hora: string;
+  codUsu: string;
+  nombreUsuario: string;
+  cambios: CambioProducto[];
+  datosNuevos: Partial<ProductoDetalle> | null;
+}
+
+export interface AuditoriaProductosResponse {
+  data: AuditoriaProducto[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
 export interface HistorialTraspasosResponse {
@@ -292,7 +373,7 @@ export interface MovimientoMercaderiaResponse {
   codRemEntrada: string;
   codRemSalida?: string;
   almacen?: string;
-  tipo?: TipoTraspaso;
+  tipo?: TipoTraspasoRegistro;
   firma?: FirmaTraspaso;
 }
 
