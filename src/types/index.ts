@@ -245,6 +245,48 @@ export interface FirmaTraspaso {
   estado: 'PENDIENTE' | 'COMPLETADO' | 'VENDIDO' | 'DEVUELTO';
 }
 
+// ─── Historial de traspasos firmados (talonario digital) ───────────────────
+export type EstadoTraspaso = 'PENDIENTE' | 'COMPLETADO' | 'VENDIDO' | 'DEVUELTO';
+
+export interface ItemTraspasoHistorial {
+  idFab: number;
+  codFab: string;
+  descPro: string | null;
+  cantidad: number;
+  obs: string | null;
+}
+
+export interface TraspasoHistorial {
+  idAutorizacion: number;
+  codRemSalida: string;
+  codRemEntrada: string | null;
+  tipo: TipoTraspaso;
+  estado: EstadoTraspaso;
+  fecha: string; // YYYY-MM-DD, hora de Bolivia
+  hora: string;  // HH:mm:ss
+  codSucOri: string;
+  nomSucOri: string;
+  codSucDes: string;
+  nomSucDes: string;
+  codUsuEncargado: string;
+  nombreEncargado: string;
+  codUsuFirmante: string;
+  nombreFirmante: string;
+  obs: string | null;
+  totalUnidades: number;
+  items: ItemTraspasoHistorial[];
+}
+
+export interface HistorialTraspasosResponse {
+  data: TraspasoHistorial[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface FiltrosHistorialTraspasos {
+  alcance: 'TODOS' | 'MIS_ALMACENES';
+  almacenes: Almacen[];
+}
+
 export interface MovimientoMercaderiaResponse {
   message: string;
   codRemEntrada: string;
