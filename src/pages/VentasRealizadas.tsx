@@ -302,18 +302,26 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
 
   const anular = async () => {
     if (!detalle) return;
-    if (!window.confirm(`¿Está seguro de anular la venta ${detalle.codVenta}? Esto devolverá los productos al stock.`)) return;
+    if (!window.confirm(
+      `¿Anular la venta ${detalle.codVenta}?\n\n` +
+      'Los productos vuelven al stock: lo que salió de un traspaso regresa a su almacén de origen y el resto a MOTOR ZONE.',
+    )) return;
     
     setAnulando(true);
     setMsgAnular('');
     try {
-      // 1. Llamamos a la API enviando el flag explícito de restituir stock (si tu backend lo requiere)
-      await api.put(`/ventas/${detalle.codVenta}/anular`, { restaurarStock: true });
-      
+      const { data } = await api.put<{
+        unidadesMotorZone: number;
+        devueltoAOrigen: { almacen: string; unidades: number }[];
+      }>(`/ventas/${detalle.codVenta}/anular`);
+
       setDetalle({ ...detalle, estado: 'A' });
-      setMsgAnular('Venta anulada correctamente y stock devuelto al inventario.');
-      
-      // 2. IMPORTANTE: Notificar o recargar la lista principal para reflejar cambios
+      // Indica a dónde volvió cada parte del stock
+      const partes = [
+        data.unidadesMotorZone > 0 ? `${data.unidadesMotorZone} unid. a MOTOR ZONE` : '',
+        ...data.devueltoAOrigen.map((d) => `${d.unidades} unid. al almacén ${d.almacen}`),
+      ].filter(Boolean);
+      setMsgAnular(`Venta anulada correctamente. Stock devuelto: ${partes.join(', ') || 'sin unidades pendientes'}.`);
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         setMsgAnular(e.response?.data?.message ?? 'Error al anular la venta.');
@@ -477,10 +485,10 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
 
               {detalle.estado !== 'A' && (
                 <div style={{ marginTop: 20 }}>
-                  {/* <button onClick={anular} disabled={anulando} style={btnStyle('danger')}>
+                  <button onClick={anular} disabled={anulando} style={btnStyle('danger')}>
                     <i className={`ti ${anulando ? 'ti-loader-2' : 'ti-ban'}`} />
                     {anulando ? 'Anulando…' : 'Anular venta'}
-                  </button> */}
+                  </button>
                   {msgAnular && (
                     <div style={{ marginTop: 8, fontSize: 12, color: msgAnular.includes('correctamente') ? '#1a7a40' : BRAND.red, fontWeight: 600 }}>
                       {msgAnular}
