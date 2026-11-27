@@ -151,6 +151,8 @@ export function ProductoForm({ valores, onChange, catalogos, disabled, codigosSo
             value={valores.codMod} disabled={disabled}
             onChange={(e) => set('codMod', e.target.value)}
           >
+            {/* Sin elegir, la API asigna el modelo genérico */}
+            <option value="">— Sin modelo específico —</option>
             {modelosVisibles.lista.map((m) => (
               <option key={m.codMod} value={m.codMod}>
                 {m.nomModelo}{m.nomMarca ? ` — ${m.nomMarca}` : ''}

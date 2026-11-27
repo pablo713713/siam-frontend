@@ -50,13 +50,12 @@ export function TipoCambio() {
     try {
       const { data } = await api.post('/ventas/dolar-paralelo', {
         tipo_cambio: valor,
-        cod_emp: usuario?.cod_emp ?? '001',
       });
       flash(data.message);
       cargarVigente();
     } catch (err: unknown) {
-      const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      flash(m ?? 'Error al guardar el tipo de cambio.', 'err');
+      const m = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      flash((Array.isArray(m) ? m[0] : m) ?? 'Error al guardar el tipo de cambio.', 'err');
     } finally {
       setLoading(false);
     }

@@ -60,7 +60,7 @@ export function NuevoProductoModal({ onClose, onCreado }: Props) {
         codPro: valores.codPro.trim(),
         codFab: valores.codFab.trim(),
         codProv: valores.codProv,
-        codMod: Number(valores.codMod),
+        ...(valores.codMod ? { codMod: Number(valores.codMod) } : {}),
         codigoTipo: valores.codigoTipo,
         ...(valores.unidad.trim() ? { unidad: valores.unidad.trim() } : {}),
         ...(valores.barra.trim() ? { barra: valores.barra.trim() } : {}),

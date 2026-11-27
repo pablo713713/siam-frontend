@@ -20,7 +20,9 @@ export function Login() {
     try {
       const { data } = await api.post<AuthResponse>('/auth/login', { alias, contrasena });
       login(data.access_token, data.usuario);
-      navigate('/dashboard', { replace: true });
+      // BUG-F1.1: cada rol entra directo a su pantalla inicial
+      const esAdmin = data.usuario?.roles?.includes('Administrador');
+      navigate(esAdmin ? '/dashboard' : '/busqueda', { replace: true });
     } catch (err) {
       // 429: alias bloqueado temporalmente tras 5 intentos fallidos
       const resp = (err as { response?: { status?: number; data?: { message?: string } } }).response;

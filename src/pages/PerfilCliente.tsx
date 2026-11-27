@@ -209,12 +209,13 @@ export function PerfilCliente() {
 
   // ── Cargar detalle de compra ──
   const verDetalleCompra = async (compra: CompraHistorial) => {
-    if (compra.tipo !== 'CONTADO') return; // solo ventas tienen endpoint de detalle
+    // BUG-F4.3: el detalle de contado y de crédito sale del mismo endpoint
+    if (!codCli) return;
     setCompraSelId(compra.id);
     setDetalleCompra(null);
     setLoadingDetalle(true);
     try {
-      const { data } = await api.get(`/ventas/${compra.id}`);
+      const { data } = await api.get(`/clientes/${codCli}/compras/${compra.id}`);
       setDetalleCompra(data);
     } catch {
       setDetalleCompra({ error: true });
@@ -502,18 +503,17 @@ export function PerfilCliente() {
                     </thead>
                     <tbody>
                       {historial.historial.map((compra, i) => {
-                        const esContado = compra.tipo === 'CONTADO';
                         return (
                           <tr
                             key={`${compra.id}-${i}`}
-                            onClick={() => esContado && verDetalleCompra(compra)}
+                            onClick={() => verDetalleCompra(compra)}
                             style={{
                               background: compraSelId === compra.id ? '#eef4ff' : i % 2 === 0 ? BRAND.white : BRAND.gray50,
-                              cursor: esContado ? 'pointer' : 'default',
+                              cursor: 'pointer',
                               transition: 'background 0.1s',
                             }}
-                            onMouseEnter={e => esContado && (e.currentTarget.style.background = '#eef4ff')}
-                            onMouseLeave={e => esContado && (e.currentTarget.style.background = compraSelId === compra.id ? '#eef4ff' : i % 2 === 0 ? BRAND.white : BRAND.gray50)}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#eef4ff')}
+                            onMouseLeave={e => (e.currentTarget.style.background = compraSelId === compra.id ? '#eef4ff' : i % 2 === 0 ? BRAND.white : BRAND.gray50)}
                           >
                             <td style={{ ...S.td, fontFamily: 'monospace', fontSize: 12, color: BRAND.gray600 }}>
                               {compra.id}
@@ -525,7 +525,7 @@ export function PerfilCliente() {
                             </td>
                             <td style={S.td}>{estadoBadge(compra.estado)}</td>
                             <td style={{ ...S.td, textAlign: 'center' as const }}>
-                              {esContado && (
+                              {(
                                 <i
                                   className={`ti ${compraSelId === compra.id ? 'ti-chevron-down' : 'ti-chevron-right'}`}
                                   style={{ color: BRAND.gray400, fontSize: 15 }}
@@ -613,7 +613,13 @@ export function PerfilCliente() {
                         <tr>
                           <td style={{ ...S.td, color: BRAND.gray600, fontWeight: 600, fontSize: 12 }}>Estado</td>
                           <td style={S.td}>
-                            {detalleCompra.estado === 'C'
+                            {detalleCompra.tipo === 'CREDITO'
+                              ? (detalleCompra.estado === 'C'
+                                  ? <span style={badgeStyle('green')}>Crédito pagado</span>
+                                  : detalleCompra.estado === 'A'
+                                  ? <span style={badgeStyle('amber')}>Crédito abierto</span>
+                                  : <span style={badgeStyle('gray')}>{detalleCompra.estado}</span>)
+                              : detalleCompra.estado === 'C'
                               ? <span style={badgeStyle('green')}>Completada</span>
                               : detalleCompra.estado === 'A'
                               ? <span style={badgeStyle('red')}>Anulada</span>
@@ -621,6 +627,12 @@ export function PerfilCliente() {
                             }
                           </td>
                         </tr>
+                        {detalleCompra.tipo === 'CREDITO' && (
+                          <tr>
+                            <td style={{ ...S.td, color: BRAND.gray600, fontWeight: 600, fontSize: 12 }}>Saldo pendiente</td>
+                            <td style={{ ...S.td, fontWeight: 700 }}>{fmtMoney(Number(detalleCompra.saldo ?? 0))}</td>
+                          </tr>
+                        )}
                         {detalleCompra.obs && (
                           <tr>
                             <td style={{ ...S.td, color: BRAND.gray600, fontWeight: 600, fontSize: 12 }}>Observación</td>
@@ -678,7 +690,8 @@ export function PerfilCliente() {
                   </div>
 
                   {/* Link a devolución si aplica */}
-                  {detalleCompra.estado !== 'A' && perfil?.extension?.acepta_devoluciones && (
+                  {esAdmin && perfil?.extension?.acepta_devoluciones
+                    && (detalleCompra.tipo === 'CREDITO' || detalleCompra.estado !== 'A') && (
                     <div style={{ marginTop: 16 }}>
                       <button
                         style={btnStyle('secondary')}
