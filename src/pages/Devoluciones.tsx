@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
+import type { VendedorFirma } from '../types';
 
 type TipoDocumento = 'VENTA' | 'CREDITO';
 
@@ -10,6 +11,17 @@ interface ItemDoc {
   descPro: string;
   cantidadDisponible: number; // cantidad vendida (venta) o disponible a devolver (crédito)
   precioUnit: number;
+}
+
+// Devolución firmada (SISTEMA_DEVOLUCION_REGISTRO): quién la registró y qué vendedor firmó
+interface DevolucionRegistrada {
+  idGrupo: string;
+  fecha: string;
+  hora: string;
+  obs: string | null;
+  registra: { codUsu: string; nombre: string };
+  firmante: { codUsu: string; nombre: string };
+  items: { movimiento: string; idFab: number; codFab: string; descPro: string | null; cantidad: number; total: number; nomSuc: string | null }[];
 }
 
 interface Documento {
@@ -28,6 +40,7 @@ interface Documento {
   codSuc: string | null; // solo relevante para crédito, requerido al devolver
   saldo?: number; // solo crédito
   items: ItemDoc[];
+  devoluciones: DevolucionRegistrada[];
 }
 
 interface ItemDevolucion extends ItemDoc {
@@ -82,6 +95,12 @@ export function Devoluciones() {
   const [exitoMsg, setExitoMsg] = useState('');
   const [errorProceso, setErrorProceso] = useState('');
 
+  // Firma digital del vendedor (obligatoria para confirmar la devolución)
+  const [vendedores, setVendedores] = useState<VendedorFirma[]>([]);
+  const [codVendedor, setCodVendedor] = useState('');
+  const [passwordVendedor, setPasswordVendedor] = useState('');
+  const [errorFirma, setErrorFirma] = useState('');
+
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buscarDocumento = async (val: string) => {
@@ -124,6 +143,7 @@ export function Devoluciones() {
             numCiNit: data.numCiNit,
             codUsu: data.codUsu,
             codSuc: null,
+            devoluciones: data.devoluciones ?? [],
             items: data.items.map((it: any) => ({
               idFab: it.idFab,
               codFab: it.codFab,
@@ -151,6 +171,7 @@ export function Devoluciones() {
             codUsu: data.codUsu,
             codSuc: data.codSuc,
             saldo: Number(data.saldo),
+            devoluciones: data.devoluciones ?? [],
             items: data.items.map((it: any) => ({
               idFab: it.idFab,
               codFab: it.codFab,
@@ -190,18 +211,33 @@ export function Devoluciones() {
   const abrirConfirm = () => {
     if (!doc || itemsSeleccionados.length === 0) return;
     setErrorProceso('');
+    setErrorFirma('');
+    setPasswordVendedor('');
     setShowConfirm(true);
+    if (vendedores.length === 0) {
+      api.get<{ data: VendedorFirma[] }>('/usuarios/vendedores')
+        .then(({ data }) => setVendedores(data.data ?? []))
+        .catch(() => setErrorFirma('No se pudo cargar la lista de vendedores.'));
+    }
   };
 
   const procesar = async () => {
     if (!doc || itemsSeleccionados.length === 0) return;
-    setShowConfirm(false);
+    if (!codVendedor || !passwordVendedor) { setErrorFirma('El vendedor debe elegir su usuario e ingresar su contraseña.'); return; }
     setProcesando(true);
     setErrorProceso('');
+    setErrorFirma('');
+    const firma = { cod_usu_vendedor: codVendedor, password_vendedor: passwordVendedor };
+    type RespuestaFirmada = { firma?: { firmante?: { nombre?: string }; horaBolivia?: string | null } };
+    const quienFirmo = (data: RespuestaFirmada) =>
+      data?.firma?.firmante?.nombre
+        ? ` Firmado por ${data.firma.firmante.nombre}${data.firma.horaBolivia ? ` a las ${data.firma.horaBolivia}` : ''}.`
+        : '';
 
     try {
       if (doc.tipo === 'VENTA') {
-        await api.post('/devoluciones', {
+        const { data } = await api.post('/devoluciones', {
+          ...firma,
           cod_venta: doc.codigo,
           obs: obs.trim() || undefined,
           items: itemsSeleccionados.map(it => ({
@@ -212,10 +248,12 @@ export function Devoluciones() {
         });
 
         setExitoMsg(
-          `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}.`,
+          `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}.` +
+          quienFirmo(data),
         );
       } else {
         const { data } = await api.post(`/creditos/${doc.codigo}/devolucion`, {
+          ...firma,
           cod_suc: doc.codSuc,
           obs: obs.trim() || undefined,
           items: itemsSeleccionados.map(it => ({
@@ -229,7 +267,7 @@ export function Devoluciones() {
         const cierre = data.estado === 'C' ? ' El crédito quedó saldado por completo.' : '';
         setExitoMsg(
           `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}. ` +
-          `Nuevo saldo del crédito: ${fmtMoney(Number(data.nuevoSaldo))}.${cierre}`,
+          `Nuevo saldo del crédito: ${fmtMoney(Number(data.nuevoSaldo))}.${cierre}` + quienFirmo(data),
         );
       }
 
@@ -248,9 +286,17 @@ export function Devoluciones() {
       );
 
       setObs('');
+      setShowConfirm(false);
+      setPasswordVendedor('');
       setShowExito(true);
+      // Recargar el documento para ver la devolución firmada en el historial
+      void buscarDocumento(doc.codigo);
     } catch (e: any) {
-      setErrorProceso(e?.response?.data?.message ?? 'Error al procesar la devolución.');
+      const m = e?.response?.data?.message;
+      const texto = (Array.isArray(m) ? m[0] : m) ?? 'Error al procesar la devolución.';
+      // Errores de firma se muestran en el mismo cuadro, para reintentar
+      if ([403, 429].includes(e?.response?.status) || /vendedor|contraseña/i.test(texto)) setErrorFirma(texto);
+      else { setShowConfirm(false); setErrorProceso(texto); }
     } finally {
       setProcesando(false);
     }
@@ -268,7 +314,7 @@ export function Devoluciones() {
   return(
     <div>
       {showConfirm &&(
-        <div style={overlayStyle} onClick={() => setShowConfirm(false)}>
+        <div style={overlayStyle} onClick={() => !procesando && setShowConfirm(false)}>
           <div style={modalStyle} onClick={e => e.stopPropagation()}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -302,12 +348,40 @@ export function Devoluciones() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button style={btnStyle('secondary')} onClick={() => setShowConfirm(false)}>No</button>
-              <button style={btnStyle('primary')} onClick={procesar}>
-                <i className="ti ti-check" /> Sí, devolver
-              </button>
-            </div>
+            <form
+              onSubmit={(e) => { e.preventDefault(); void procesar(); }}
+              autoComplete="off"
+              style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
+              <div style={{ fontSize: 12, color: BRAND.gray600 }}>
+                <i className="ti ti-signature" /> Firma del vendedor: elige tu usuario e ingresa tu contraseña.
+              </div>
+              {errorFirma && <div style={S.errorBanner} role="alert">{errorFirma}</div>}
+              <div>
+                <label htmlFor="dev-vendedor" style={S.label}>Vendedor</label>
+                <select id="dev-vendedor" style={S.select} value={codVendedor} disabled={procesando}
+                  onChange={(e) => setCodVendedor(e.target.value)}>
+                  <option value="">Seleccione su usuario</option>
+                  {vendedores.map((v) => (
+                    <option key={v.codUsu} value={v.codUsu}>
+                      {`${v.nomUsu ?? ''} ${v.apUsu ?? ''}`.trim()} ({v.alias})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="dev-password" style={S.label}>Contraseña del vendedor</label>
+                <input id="dev-password" type="password" autoComplete="new-password" style={S.input}
+                  value={passwordVendedor} disabled={procesando}
+                  onChange={(e) => setPasswordVendedor(e.target.value)} />
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button type="button" style={btnStyle('secondary')} onClick={() => setShowConfirm(false)} disabled={procesando}>Cancelar</button>
+                <button type="submit" style={btnStyle('primary')} disabled={procesando || !codVendedor || !passwordVendedor}>
+                  <i className="ti ti-signature" /> {procesando ? 'Firmando…' : 'Firmar y devolver'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -412,6 +486,43 @@ export function Devoluciones() {
               </table>
             </div>
           </div>
+
+          {doc.devoluciones.length > 0 && (
+            <div style={S.card}>
+              <div style={{ ...S.cardTitle, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="ti ti-history" style={{ color: BRAND.red, fontSize: 15 }} />
+                Devoluciones registradas ({doc.devoluciones.length})
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={S.table}>
+                  <thead>
+                    <tr>
+                      {['Fecha y hora', 'Productos', 'Almacén', 'Registró', 'Firmó (vendedor)'].map((h) => (
+                        <th key={h} style={{ ...S.th, fontSize: 11 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {doc.devoluciones.map((d) => (
+                      <tr key={d.idGrupo}>
+                        <td style={{ ...S.td, whiteSpace: 'nowrap' }}>{d.fecha.split('-').reverse().join('/')} {d.hora}</td>
+                        <td style={S.td}>
+                          {d.items.filter((it) => it.movimiento === 'DEVUELVE').map((it) => (
+                            <div key={`${d.idGrupo}-${it.idFab}`} style={{ fontSize: 12 }}>
+                              {it.descPro ?? it.codFab} × {it.cantidad}
+                            </div>
+                          ))}
+                        </td>
+                        <td style={S.td}>{d.items[0]?.nomSuc ?? '—'}</td>
+                        <td style={S.td}>{d.registra.nombre || d.registra.codUsu}</td>
+                        <td style={{ ...S.td, fontWeight: 600 }}>{d.firmante.nombre || d.firmante.codUsu}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {documentoBloqueado && (
             <div style={{ ...S.card, borderLeft: `4px solid ${BRAND.red}`, background: '#ffeaea' }}>
