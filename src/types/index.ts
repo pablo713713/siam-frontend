@@ -128,6 +128,7 @@ export interface ClientePerfil {
   domicilio: string | null;
   activo: boolean;
   extension: ClienteExtension;
+  credito?: CupoCreditoCliente | null;
 }
 
 export interface CompraHistorial {
@@ -151,6 +152,7 @@ export interface IngresosResponse {
   ventas_credito: { total: number; cantidad: number };
   total_bruto: number;
   total_devoluciones: number;
+  total_devoluciones_credito?: number;
 }
 
 export interface GananciaResponse {
@@ -404,7 +406,16 @@ export interface ClienteCredito {
   alerta: AlertaCredito | null;
 }
 
+export interface CupoCreditoCliente {
+  limite: number;
+  fuente: 'PERFIL' | 'LEGACY';
+  deuda: number;
+  disponible: number;
+  habilitado: boolean;
+}
+
 export interface CreditoClienteResponse {
+  cupo?: CupoCreditoCliente | null;
   creditos: Pick<CreditoActivo, 'codCre' | 'fecInicio' | 'fecFin' | 'total' | 'saldo' | 'diasRestantes' | 'alerta'>[];
   totalSaldos: number;
 }

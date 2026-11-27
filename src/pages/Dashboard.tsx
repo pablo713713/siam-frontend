@@ -363,8 +363,10 @@ export function Dashboard() {
           accentColor={BRAND.blue}
         />
         <KpiCard icon="ti-arrow-back"   label="Devoluciones"       loading={loading}
-          value={ingresos ? fmtMoney(ingresos.total_devoluciones ?? 0) : '—'}
-          sub={ingresos ? "Monto total retornado" : undefined}
+          value={ingresos ? fmtMoney((ingresos.total_devoluciones ?? 0) + (ingresos.total_devoluciones_credito ?? 0)) : '—'}
+          sub={ingresos
+            ? `Contado ${fmtMoney(ingresos.total_devoluciones ?? 0)} · Crédito ${fmtMoney(ingresos.total_devoluciones_credito ?? 0)}`
+            : undefined}
           accentColor={BRAND.red} // Rojo para identificar notas de crédito/devolución
         />
         <KpiCard icon="ti-trending-up" label="Ganancia Neta"      loading={loading}
