@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { NuevoClienteModal } from '../components/admin/NuevoClienteModal';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type {
   ClientePerfil,
@@ -103,6 +104,8 @@ export function PerfilCliente() {
   const navigate = useNavigate();
   // Solo el Administrador cambia la configuración del cliente (la API lo exige)
   const esAdmin = useAuth().usuario?.roles?.includes('Administrador') ?? false;
+  const [mostrarNuevo, setMostrarNuevo] = useState(false);
+  const [avisoNuevo, setAvisoNuevo] = useState('');
 
   // ── Buscador por nombre/CI ──
   const [query, setQuery] = useState('');
@@ -256,12 +259,34 @@ export function PerfilCliente() {
   return (
     <div>
       {/* Título */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>Gestión de Clientes</div>
-        <div style={{ color: BRAND.gray600, fontSize: 14, marginTop: 4 }}>
-          Busca un cliente por nombre, razón social o CI/NIT para ver su perfil y historial.
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.black }}>Gestión de Clientes</div>
+          <div style={{ color: BRAND.gray600, fontSize: 14, marginTop: 4 }}>
+            Busca un cliente por nombre, razón social o CI/NIT para ver su perfil y historial.
+          </div>
         </div>
+        {esAdmin && (
+          <button style={btnStyle('primary')} onClick={() => setMostrarNuevo(true)}>
+            <i className="ti ti-user-plus" /> Nuevo cliente
+          </button>
+        )}
       </div>
+      {avisoNuevo && (
+        <div style={{ ...S.card, borderLeft: '4px solid #1a7a40', background: '#e6f9ee', color: '#1a7a40', fontWeight: 600 }} role="status">
+          {avisoNuevo}
+        </div>
+      )}
+      {mostrarNuevo && (
+        <NuevoClienteModal
+          onClose={() => setMostrarNuevo(false)}
+          onCreado={(codCli, nombre) => {
+            setMostrarNuevo(false);
+            setAvisoNuevo(`✓ Cliente ${nombre} registrado con el código ${codCli}.`);
+            void seleccionarCliente({ codCli, nomCli: nombre, apeCli: null, razonSocial: nombre } as ClienteSearch);
+          }}
+        />
+      )}
 
       {/* Buscador */}
       <div style={{ ...S.card, position: 'relative' }}>

@@ -17,6 +17,7 @@ const NAV: NavItem[] = [
   { icon: 'ti-shield-lock',      label: 'Roles',             to: '/roles',        requiredRole: 'Administrador' },
   { icon: 'ti-user-check',       label: 'Asignar Rol',       to: '/asignar-rol',  requiredRole: 'Administrador' },
   { icon: 'ti-currency-dollar',  label: 'Tipo de Cambio',    to: '/tipo-cambio',  requiredRole: 'Administrador' },
+  { icon: 'ti-shield-search',    label: 'Auditoría',         to: '/auditoria',    requiredRole: 'Administrador' },
   { section: 'Inventario' },
   { icon: 'ti-search',           label: 'Busqueda Avanzada', to: '/busqueda'      },
   { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },

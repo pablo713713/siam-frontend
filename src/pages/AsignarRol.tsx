@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
 import type { Almacen, Rol, UsuarioRolResponse } from '../types';
+import { NuevoUsuarioModal } from '../components/admin/NuevoUsuarioModal';
 
 // Roles que pueden registrar traspasos: a estos usuarios se les asignan almacenes
 const ROLES_CON_ALMACEN = ['Encargado de Almacen', 'Administrador'];
@@ -24,6 +25,7 @@ export function AsignarRol() {
   const [selectedRol, setSelectedRol]     = useState('');
   const [showModal, setShowModal]         = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
+  const [mostrarNuevoUsuario, setMostrarNuevoUsuario] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Almacenes del encargado: desde cuáles puede registrar traspasos
@@ -164,8 +166,23 @@ export function AsignarRol() {
   return (
     <div>
       {}
+        {mostrarNuevoUsuario && (
+          <NuevoUsuarioModal
+            onClose={() => setMostrarNuevoUsuario(false)}
+            onCreado={(codUsu, alias) => {
+              setMostrarNuevoUsuario(false);
+              setMsg({ text: `Usuario ${alias} creado con el código ${codUsu}.`, type: 'ok' });
+              setQuery(alias);
+            }}
+          />
+        )}
         <div style={S.card}>
-          <div style={S.cardTitle}>Buscar usuario</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={S.cardTitle}>Buscar usuario</div>
+            <button style={btnStyle('primary')} onClick={() => setMostrarNuevoUsuario(true)}>
+              <i className="ti ti-user-plus" /> Nuevo usuario
+            </button>
+          </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
