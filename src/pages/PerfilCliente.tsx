@@ -120,6 +120,7 @@ export function PerfilCliente() {
   const [errorPerfil, setErrorPerfil] = useState('');
 
   // ── Extensión ──
+  const [limiteCredito, setLimiteCredito] = useState('');
   const [aceptaDevoluciones, setAceptaDevoluciones] = useState(false);
   const [savingExt, setSavingExt] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
@@ -169,6 +170,7 @@ export function PerfilCliente() {
       setPerfil(data);
       setCodCli(String(c.codCli));
       setAceptaDevoluciones(data.extension?.acepta_devoluciones ?? false);
+      setLimiteCredito(data.extension?.limite_credito != null ? String(data.extension.limite_credito) : '');
       cargarHistorial(String(c.codCli));
     } catch (e: any) {
       setErrorPerfil(e?.response?.data?.message ?? 'No se pudo cargar el perfil del cliente.');
@@ -193,14 +195,23 @@ export function PerfilCliente() {
   // ── Guardar extensión ──
   const guardarExtension = async () => {
     if (!codCli) return;
+    // Vacío = sin límite propio (se usa el CREDITO_MAXIMO del sistema anterior)
+    const limite = limiteCredito.trim() === '' ? 0 : Number(limiteCredito.replace(',', '.'));
+    if (!Number.isFinite(limite) || limite < 0) {
+      setSaveMsg('✗ El límite de crédito debe ser un número mayor o igual a 0.');
+      return;
+    }
     setSavingExt(true);
     setSaveMsg('');
     try {
-      await api.put(`/clientes/${codCli}/extension`, { acepta_devoluciones: aceptaDevoluciones });
+      await api.put(`/clientes/${codCli}/extension`, { acepta_devoluciones: aceptaDevoluciones, limite_credito: limite });
       setSaveMsg('✓ Configuraciones guardadas correctamente.');
-      if (perfil) setPerfil({ ...perfil, extension: { ...perfil.extension, acepta_devoluciones: aceptaDevoluciones } });
-    } catch {
-      setSaveMsg('✗ No se pudo guardar. Intente nuevamente.');
+      // Recargar para ver el límite efectivo y el margen recalculados
+      const { data } = await api.get<ClientePerfil>(`/clientes/${codCli}/perfil`);
+      setPerfil(data);
+    } catch (e: any) {
+      const m = e?.response?.data?.message;
+      setSaveMsg(`✗ ${(Array.isArray(m) ? m[0] : m) ?? 'No se pudo guardar. Intente nuevamente.'}`);
     } finally {
       setSavingExt(false);
       setTimeout(() => setSaveMsg(''), 4000);
@@ -238,8 +249,9 @@ export function PerfilCliente() {
 
   // ── Crédito del cliente (viene del search) ──
   // El indicador de crédito viene de la extensión (limite_credito) o del campo CREDITO_MAXIMO en search
-  const puedeCredito =
-    perfil?.extension?.limite_credito != null && Number(perfil.extension.limite_credito) > 0;
+  // Límite efectivo (perfil o, si no, CREDITO_MAXIMO), deuda y margen: los calcula la API
+  const credito = perfil?.credito ?? null;
+  const puedeCredito = !!credito?.habilitado;
 
   return (
     <div>
@@ -386,7 +398,7 @@ export function PerfilCliente() {
                 {puedeCredito ? (
                   <span style={{ ...badgeStyle('green'), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <i className="ti ti-credit-card" style={{ fontSize: 12 }} />
-                    Crédito: {fmtMoney(Number(perfil.extension.limite_credito))}
+                    Límite {fmtMoney(credito!.limite)} · Debe {fmtMoney(credito!.deuda)} · Disponible {fmtMoney(credito!.disponible)}
                   </span>
                 ) : (
                   <span style={{ ...badgeStyle('gray'), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -417,6 +429,18 @@ export function PerfilCliente() {
             </div>
 
             <Toggle value={aceptaDevoluciones} onChange={setAceptaDevoluciones} label="Acepta devoluciones" />
+
+            <div style={{ marginTop: 12, maxWidth: 280 }}>
+              <label htmlFor="pc-limite" style={S.label}>Límite de crédito (Bs)</label>
+              <input
+                id="pc-limite" style={S.input} inputMode="decimal" placeholder="Sin límite propio"
+                value={limiteCredito} onChange={(e) => setLimiteCredito(e.target.value)}
+              />
+              <div style={{ fontSize: 11, color: BRAND.gray600, marginTop: 4 }}>
+                Vacío o 0: se usa el crédito máximo del sistema anterior
+                {credito ? ` (límite vigente: ${fmtMoney(credito.limite)}${credito.fuente === 'LEGACY' ? ', del sistema anterior' : ''})` : ''}.
+              </div>
+            </div>
 
             <div style={{ height: 1, background: BRAND.gray200, margin: '12px 0' }} />
 

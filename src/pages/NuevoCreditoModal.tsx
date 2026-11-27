@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../api/axios';
 import css from './Creditos.module.css';
 import type { ClienteCredito, Producto } from '../types';
+import { anchoGuardado, guardarAncho, imprimirBoletaCredito, type AnchoTicket } from '../utils/boletaCredito';
 
 const COD_SUC_MOTORZONE = '00011';
 const PLAZO_DEFAULT = 4;
@@ -39,6 +40,7 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: P
   const [loadingProducto, setLoadingProducto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null);
+  const [anchoBoleta, setAnchoBoleta] = useState<AnchoTicket>(anchoGuardado);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -117,10 +119,17 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: P
   const quitarDelCarrito = (idFab: number) => setCarrito((prev) => prev.filter((i) => i.idFab !== idFab));
 
   const totalCarritoBs = carrito.reduce((sum, i) => sum + i.importe * tipoCambio, 0);
+  // Margen del cliente: si el total supera lo disponible no se puede registrar
+  const disponible = clienteSel ? Number(clienteSel.disponible) : 0;
+  const excedeLimite = !!clienteSel && totalCarritoBs > disponible + 0.005;
 
   const crearCredito = async () => {
     if (!clienteSel) { flash('Seleccioná un cliente habilitado para crédito.', 'err'); return; }
     if (!carrito.length) { flash('El carrito está vacío.', 'err'); return; }
+    if (excedeLimite) {
+      flash(`El cliente alcanzó su límite de crédito: solo tiene Bs ${disponible.toFixed(2)} disponibles.`, 'err');
+      return;
+    }
     for (const item of carrito) {
       // Solo se vende desde MOTOR ZONE (igual que la venta al contado)
       if (item.cantidad > item.stockMotorZone) {
@@ -147,12 +156,18 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: P
           precio_cre: i.precioUnitario * tipoCambio,
         })),
       });
-      flash(`Crédito ${data.cod_cre} registrado correctamente.`);
+      flash(`Crédito ${data.cod_cre} registrado correctamente. Imprimiendo boleta…`);
       onCreated();
+      try {
+        await imprimirBoletaCredito(data.cod_cre, anchoBoleta);
+      } catch {
+        flash(`Crédito ${data.cod_cre} registrado, pero no se pudo imprimir la boleta. Reimprímela desde la lista de créditos.`, 'err');
+        return;
+      }
       setTimeout(onClose, 800);
     } catch (err: unknown) {
-      const m = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      flash(m ?? 'Error al registrar el crédito.', 'err');
+      const m = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      flash((Array.isArray(m) ? m[0] : m) ?? 'Error al registrar el crédito.', 'err');
     } finally {
       setLoading(false);
     }
@@ -203,7 +218,10 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: P
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', border: '1px solid #eee', borderRadius: 6 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 13 }}>{clienteSel.razonSocial || `${clienteSel.nomCliente ?? ''} ${clienteSel.apeCliente ?? ''}`}</div>
-                  <div style={{ fontSize: 11, color: '#888' }}>Cupo disponible: {clienteSel.disponible.toFixed(2)}</div>
+                  <div style={{ fontSize: 11, color: '#888' }}>
+                    Límite Bs {Number(clienteSel.creditoMaximo).toFixed(2)} · Debe Bs {Number(clienteSel.usado).toFixed(2)} ·{' '}
+                    <strong style={{ color: '#1b7540' }}>Disponible Bs {disponible.toFixed(2)}</strong>
+                  </div>
                 </div>
                 <button onClick={() => setClienteSel(null)} style={{ background: 'none', border: '1px solid #ddd', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 12 }}>Cambiar</button>
               </div>
@@ -304,10 +322,29 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: P
             <div>
               <span className={css.totalLabel}>Total</span>
               <div className={css.totalValue}>Bs {totalCarritoBs.toFixed(2)}</div>
+              {clienteSel && (
+                <div style={{ fontSize: 11, fontWeight: 600, color: excedeLimite ? '#a51d1d' : '#888' }}>
+                  {excedeLimite
+                    ? `Supera el límite: faltan Bs ${(totalCarritoBs - disponible).toFixed(2)} de margen`
+                    : `Disponible después del crédito: Bs ${(disponible - totalCarritoBs).toFixed(2)}`}
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <label style={{ fontSize: 11, color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Boleta
+                <select
+                  value={anchoBoleta}
+                  onChange={(e) => { const a = Number(e.target.value) as AnchoTicket; setAnchoBoleta(a); guardarAncho(a); }}
+                  style={{ fontSize: 12, padding: '6px 4px', borderRadius: 6, border: '1px solid #ddd' }}
+                  aria-label="Ancho del rollo de la boleta"
+                >
+                  <option value={80}>80 mm</option>
+                  <option value={58}>58 mm</option>
+                </select>
+              </label>
               <button onClick={onClose} disabled={loading} style={{ border: '1px solid #ddd', background: '#fff', borderRadius: 6, padding: '10px 16px', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={crearCredito} disabled={loading || !carrito.length || !clienteSel} className={css.payButton}>
+              <button onClick={crearCredito} disabled={loading || !carrito.length || !clienteSel || excedeLimite} className={css.payButton}>
                 {loading ? 'Registrando…' : 'Registrar crédito'}
               </button>
             </div>
