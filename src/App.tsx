@@ -22,6 +22,7 @@ import { MovimientosAlmacen } from './pages/MovimientosAlmacen';
 import { HistorialTraspasos } from './pages/HistorialTraspasos';
 import { HistorialProductos } from './pages/HistorialProductos';
 import { CreditosAbiertos } from './pages/CreditosAbiertos';
+import { Auditoria } from './pages/Auditoria';
 
 
 function RoleRoute({ role, children }: { role: string | string[]; children: React.ReactNode }) {
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/roles" element={<RoleRoute role="Administrador"><MainLayout><Roles /></MainLayout></RoleRoute>} />
           <Route path="/asignar-rol" element={<RoleRoute role="Administrador"><MainLayout><AsignarRol /></MainLayout></RoleRoute>} />
           <Route path="/tipo-cambio" element={<RoleRoute role="Administrador"><MainLayout><TipoCambio /></MainLayout></RoleRoute>} />
+          <Route path="/auditoria" element={<RoleRoute role="Administrador"><MainLayout><Auditoria /></MainLayout></RoleRoute>} />
 
           {/* Inventario */}
           <Route path="/busqueda" element={<PrivateRoute><MainLayout><Busqueda /></MainLayout></PrivateRoute>} />

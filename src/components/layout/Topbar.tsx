@@ -13,6 +13,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/ventas':'Ventas Realizadas',
   '/devoluciones':'Devoluciones',
   '/tipo-cambio': 'Tipo de Cambio',
+  '/auditoria':   'Auditoría',
 };
 
 export function Topbar() {

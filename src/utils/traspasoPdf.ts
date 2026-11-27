@@ -27,7 +27,7 @@ const NEGRO: [number, number, number] = [17, 17, 17];
 const GRIS: [number, number, number] = [102, 102, 102];
 const GRIS_CLARO: [number, number, number] = [229, 229, 229];
 
-const ahoraBolivia = () =>
+export const ahoraBolivia = () =>
   new Intl.DateTimeFormat('es-BO', {
     timeZone: 'America/La_Paz',
     dateStyle: 'short',
@@ -35,7 +35,7 @@ const ahoraBolivia = () =>
   }).format(new Date());
 
 // jsPDF y autotable pesan: se cargan solo cuando el usuario exporta
-async function cargarPdf() {
+export async function cargarPdf() {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
@@ -43,7 +43,7 @@ async function cargarPdf() {
   return { jsPDF, autoTable };
 }
 
-function encabezado(doc: jsPDF, titulo: string, subtitulo: string) {
+export function encabezado(doc: jsPDF, titulo: string, subtitulo: string) {
   const ancho = doc.internal.pageSize.getWidth();
   doc.setFillColor(...ROJO);
   doc.rect(0, 0, ancho, 6, 'F');
@@ -70,7 +70,7 @@ function encabezado(doc: jsPDF, titulo: string, subtitulo: string) {
   doc.line(14, 28, ancho - 14, 28);
 }
 
-function piePaginas(doc: jsPDF, texto: string) {
+export function piePaginas(doc: jsPDF, texto: string) {
   const total = doc.getNumberOfPages();
   const ancho = doc.internal.pageSize.getWidth();
   const alto = doc.internal.pageSize.getHeight();
