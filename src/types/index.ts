@@ -65,6 +65,7 @@ export interface Producto {
   plisBs: number | null;
   pminBs: number | null;
   pmayBs: number | null;
+  stockAlmacen?: number; // stock en el almacén consultado (búsqueda con cod_suc)
 }
 
 export interface PaginatedResult<T> {
@@ -221,7 +222,9 @@ export interface TraspasoAlmacenRequest {
   cod_suc_des: string;
   // El encargado que registra se toma del token en el backend
   password_firma: string;
-  cod_usu_vendedor?: string; // solo en salidas a venta
+  password_encargado?: string; // salida a venta, paso 1: firma del encargado
+  cod_usu_vendedor?: string;   // salida a venta, paso 2: vendedor que se lleva los productos
+  reposicion?: boolean;        // hacia MOTOR ZONE sin vendedor
   obs?: string;
   items: ItemMovimientoMercaderia[];
 }
@@ -243,6 +246,8 @@ export interface VendedorFirma {
 
 export interface FirmaTraspaso {
   idAutorizacion: number | null;
+  // Salida a venta: encargado que entregó (paso 1) y vendedor que se llevó (paso 2)
+  encargado?: { codUsu: string; alias: string; nombre: string } | null;
   firmante: { codUsu: string; alias: string; nombre: string };
   fechaBolivia: string | null;
   horaBolivia: string | null;

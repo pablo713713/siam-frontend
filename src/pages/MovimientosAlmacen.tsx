@@ -44,10 +44,15 @@ const LIMIT = 30;
 
 // Misma regla que el backend (calcularTipoTraspaso): solo se usa para mostrar
 // qué firma se pedirá; el backend vuelve a calcularlo y es quien decide.
-const calcularTipoTraspaso = (ctx: ContextoTraspaso | null, origen: string, destino: string): TipoTraspaso => {
+const calcularTipoTraspaso = (
+  ctx: ContextoTraspaso | null, origen: string, destino: string, reposicion: boolean,
+): TipoTraspaso => {
   const tienda = ctx?.almacenesTienda ?? [];
   const origenEnTienda = tienda.includes(origen);
-  if (origenEnTienda && destino === ctx?.almacenPrincipal) return 'SALIDA_VENTA';
+  // Todo lo que va a MOTOR ZONE lo lleva un vendedor (doble firma), salvo una reposición
+  if (destino === ctx?.almacenPrincipal && origen !== ctx?.almacenPrincipal) {
+    return reposicion ? 'INGRESO_TIENDA' : 'SALIDA_VENTA';
+  }
   if (!origenEnTienda && tienda.includes(destino)) return 'INGRESO_TIENDA';
   return 'ENTRE_ALMACENES';
 };
@@ -55,7 +60,7 @@ const calcularTipoTraspaso = (ctx: ContextoTraspaso | null, origen: string, dest
 const ETIQUETA_TIPO: Record<TipoTraspaso, { texto: string; ayuda: string; color: 'amber' | 'blue' | 'gray' }> = {
   SALIDA_VENTA: {
     texto: 'Salida a venta',
-    ayuda: 'Firma el vendedor que se lleva los productos.',
+    ayuda: 'Doble firma: primero tú (encargado) y luego el vendedor que se lleva los productos.',
     color: 'amber',
   },
   INGRESO_TIENDA: {
@@ -91,6 +96,10 @@ export function MovimientosAlmacen() {
   const [errorFirma, setErrorFirma] = useState('');
   const [nuevoProductoAbierto, setNuevoProductoAbierto] = useState(false);
   const [busquedaHecha, setBusquedaHecha] = useState(false);
+  // Hacia MOTOR ZONE sin vendedor: reposición de tienda, firma solo el encargado
+  const [reposicion, setReposicion] = useState(false);
+  // Almacén cuyo stock muestran los resultados de la búsqueda
+  const [stockDe, setStockDe] = useState('');
 
   // Registrar productos nuevos: quienes manejan mercadería (lo valida el backend)
   const puedeCrearProducto = Boolean(
@@ -120,7 +129,8 @@ export function MovimientosAlmacen() {
 
   // Destinos posibles para el traspaso: todos menos el origen
   const destinosTraspaso = (contexto?.destinos ?? []).filter((d) => d.codSuc !== almacenOrigen);
-  const tipoTraspaso = calcularTipoTraspaso(contexto, almacenOrigen, almacenDestino);
+  const destinoEsPrincipal = almacenDestino === contexto?.almacenPrincipal && almacenOrigen !== contexto?.almacenPrincipal;
+  const tipoTraspaso = calcularTipoTraspaso(contexto, almacenOrigen, almacenDestino, reposicion && destinoEsPrincipal);
   const puedeTraspasar = Boolean(contexto?.puedeTraspasar && contexto.origenes.length > 0);
 
   // Cada modo tiene su propia lista de destinos: se reinicia el destino al cambiar
@@ -157,11 +167,14 @@ export function MovimientosAlmacen() {
     setExito('');
     setBuscando(true);
     try {
+      // Traspaso: stock en el almacén de origen · Ingreso: en el de destino
+      const codSuc = tipo === 'TRASPASO' ? almacenOrigen : almacenDestino;
       const { data } = await api.get<BusquedaProductosResponse>(
         '/productos/search/advanced',
-        { params: { q: query, page: 1, limit: LIMIT } },
+        { params: { q: query, page: 1, limit: LIMIT, ...(codSuc ? { cod_suc: codSuc } : {}) } },
       );
       setResultados(data.data ?? []);
+      setStockDe(codSuc);
       setBusquedaHecha(true);
     } catch (requestError) {
       setResultados([]);
@@ -261,7 +274,7 @@ export function MovimientosAlmacen() {
   };
 
   // Se llama desde el modal de firma
-  const registrarTraspasoFirmado = async (firma: { password_firma: string; cod_usu_vendedor?: string }) => {
+  const registrarTraspasoFirmado = async (firma: { password_firma: string; password_encargado?: string; cod_usu_vendedor?: string }) => {
     setErrorFirma('');
     setEnviando(true);
     try {
@@ -271,6 +284,7 @@ export function MovimientosAlmacen() {
           cod_suc_ori: almacenOrigen,
           cod_suc_des: almacenDestino,
           ...firma,
+          ...(destinoEsPrincipal ? { reposicion } : {}),
           obs: observacion.trim() || undefined,
           items: payloadItems(),
         } satisfies TraspasoAlmacenRequest,
@@ -278,7 +292,11 @@ export function MovimientosAlmacen() {
       const f = data.firma;
       setExito(
         f
-          ? `${data.message}. Firmado por ${f.firmante.nombre || f.firmante.alias} el ${f.fechaBolivia} a las ${f.horaBolivia}.`
+          ? `${data.message}. ` +
+            (f.encargado
+              ? `Entregó ${f.encargado.nombre || f.encargado.alias} y se lo llevó ${f.firmante.nombre || f.firmante.alias}`
+              : `Firmado por ${f.firmante.nombre || f.firmante.alias}`) +
+            ` el ${f.fechaBolivia} a las ${f.horaBolivia}.`
           : data.message,
       );
       setFirmaAbierta(false);
@@ -388,6 +406,12 @@ export function MovimientosAlmacen() {
             {ETIQUETA_TIPO[tipoTraspaso].ayuda}
           </p>
         )}
+        {tipo === 'TRASPASO' && puedeTraspasar && destinoEsPrincipal && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: BRAND.gray600, marginTop: 8 }}>
+            <input type="checkbox" checked={reposicion} disabled={enviando} onChange={(e) => setReposicion(e.target.checked)} />
+            Es una reposición de tienda: ningún vendedor se lleva estos productos (firma solo el encargado)
+          </label>
+        )}
         {tipo === 'TRASPASO' && almacenOrigen && almacenDestino && almacenOrigen === almacenDestino && (
           <p style={{ color: BRAND.red, fontSize: 12, marginBottom: 0 }} role="alert">
             El almacén de origen y destino deben ser diferentes.
@@ -426,17 +450,26 @@ export function MovimientosAlmacen() {
                   <th style={S.th}>Código fábrica</th>
                   <th style={S.th}>Descripción</th>
                   <th style={S.th}>Marca</th>
+                  {stockDe && <th style={{ ...S.th, textAlign: 'right' }}>Stock en {almacenNombre(stockDe)}</th>}
                   <th style={S.th}></th>
                 </tr>
               </thead>
               <tbody>
                 {resultados.map((producto, index) => {
                   const agregado = items.some((item) => item.producto.idFab === producto.idFab);
+                  // Verde suave: hay stock en el almacén · rojo pastel: no hay
+                  const stock = producto.stockAlmacen;
+                  const fondo = stockDe && stock !== undefined ? (stock > 0 ? '#eaf7ee' : '#fdecec') : undefined;
                   return (
-                    <tr key={`${producto.idFab ?? producto.id}-${index}`}>
+                    <tr key={`${producto.idFab ?? producto.id}-${index}`} style={{ background: fondo }}>
                       <td style={S.td}>{producto.codFab ?? '—'}</td>
                       <td style={S.td}>{producto.descPro}</td>
                       <td style={S.td}>{producto.marca ?? '—'}</td>
+                      {stockDe && (
+                        <td style={{ ...S.td, textAlign: 'right', fontWeight: 700, color: (stock ?? 0) > 0 ? '#1a7a40' : BRAND.red, fontVariantNumeric: 'tabular-nums' }}>
+                          {stock ?? '—'}
+                        </td>
+                      )}
                       <td style={S.td}>
                         <button
                           type="button"
@@ -517,6 +550,11 @@ export function MovimientosAlmacen() {
                         aria-label={`Cantidad de ${producto.descPro}`}
                         disabled={enviando}
                       />
+                      {tipo === 'TRASPASO' && producto.stockAlmacen !== undefined && stockDe === almacenOrigen && (
+                        <div style={{ fontSize: 11, marginTop: 4, color: cantidad > producto.stockAlmacen ? BRAND.red : BRAND.gray600 }}>
+                          Disponible: {producto.stockAlmacen}
+                        </div>
+                      )}
                     </td>
                     <td style={S.td}>
                       <input
