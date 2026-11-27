@@ -22,7 +22,7 @@ export interface ProductoFormValues {
 }
 
 export const PRODUCTO_VACIO: ProductoFormValues = {
-  descPro: '', codPro: '', codFab: '', codProv: '', codMod: '1', codigoTipo: '1', unidad: 'PZA',
+  descPro: '', codPro: '', codFab: '', codProv: '', codMod: '', codigoTipo: '1', unidad: 'PZA',
   barra: '', codAnt: '', comentario: '',
   plisPro: '', pminPro: '', pmayPro: '', plisBs: '', pminBs: '', pmayBs: '', cifCbba: '',
 };
