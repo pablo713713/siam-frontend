@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type { VendedorFirma } from '../types';
+import { CambioProducto, type ItemLleva } from '../components/devoluciones/CambioProducto';
 
 type TipoDocumento = 'VENTA' | 'CREDITO';
 
@@ -19,6 +20,7 @@ interface DevolucionRegistrada {
   fecha: string;
   hora: string;
   obs: string | null;
+  codVentaCambio: string | null;
   registra: { codUsu: string; nombre: string };
   firmante: { codUsu: string; nombre: string };
   items: { movimiento: string; idFab: number; codFab: string; descPro: string | null; cantidad: number; total: number; nomSuc: string | null }[];
@@ -100,6 +102,9 @@ export function Devoluciones() {
   const [codVendedor, setCodVendedor] = useState('');
   const [passwordVendedor, setPasswordVendedor] = useState('');
   const [errorFirma, setErrorFirma] = useState('');
+
+  // Cambio de producto: lo que el cliente se lleva en la misma operación
+  const [lleva, setLleva] = useState<ItemLleva[]>([]);
 
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -203,6 +208,10 @@ export function Devoluciones() {
 
   const totalDevolver = items.reduce((s, it) => s + it.cantidadDevolver * it.precioUnit, 0);
   const itemsSeleccionados = items.filter(it => it.cantidadDevolver > 0);
+  const totalLleva = lleva.reduce((s, it) => s + it.cantidad * it.precio, 0);
+  // > 0: el cliente paga la diferencia · < 0: se le devuelve
+  const diferencia = Math.round((totalLleva - totalDevolver) * 100) / 100;
+  const llevaInvalido = lleva.some((it) => !(it.precio > 0) || it.cantidad < 1);
 
   const documentoBloqueado = doc
     ? (doc.tipo === 'VENTA' ? doc.estado === 'A' : doc.estado !== 'A')
@@ -227,7 +236,16 @@ export function Devoluciones() {
     setProcesando(true);
     setErrorProceso('');
     setErrorFirma('');
-    const firma = { cod_usu_vendedor: codVendedor, password_vendedor: passwordVendedor };
+    const firma = {
+      cod_usu_vendedor: codVendedor,
+      password_vendedor: passwordVendedor,
+      ...(lleva.length ? {
+        lleva: lleva.map((it) => ({
+          id_fab: it.idFab, cod_fab: it.codFab, cantidad: it.cantidad,
+          precio: Math.round(it.precio * 100) / 100, prec_lista: it.precioLista,
+        })),
+      } : {}),
+    };
     type RespuestaFirmada = { firma?: { firmante?: { nombre?: string }; horaBolivia?: string | null } };
     const quienFirmo = (data: RespuestaFirmada) =>
       data?.firma?.firmante?.nombre
@@ -248,7 +266,12 @@ export function Devoluciones() {
         });
 
         setExitoMsg(
-          `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}.` +
+          (data.codVentaCambio
+            ? `Cambio registrado. Devuelve ${fmtMoney(Number(data.totalDevuelto))}, se lleva ${fmtMoney(Number(data.totalLleva))} (venta ${data.codVentaCambio}). ` +
+              (Number(data.diferencia) > 0
+                ? `El cliente paga ${fmtMoney(Number(data.diferencia))}.`
+                : Number(data.diferencia) < 0 ? `Devolver al cliente ${fmtMoney(-Number(data.diferencia))}.` : 'Sin diferencia de dinero.')
+            : `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}.`) +
           quienFirmo(data),
         );
       } else {
@@ -267,7 +290,10 @@ export function Devoluciones() {
         const cierre = data.estado === 'C' ? ' El crédito quedó saldado por completo.' : '';
         setExitoMsg(
           `Devolución realizada correctamente. ${itemsSeleccionados.length} producto${itemsSeleccionados.length !== 1 ? 's' : ''} por ${fmtMoney(totalDevolver)}. ` +
-          `Nuevo saldo del crédito: ${fmtMoney(Number(data.nuevoSaldo))}.${cierre}` + quienFirmo(data),
+          (Number(data.totalLleva) > 0 ? `Se lleva ${fmtMoney(Number(data.totalLleva))}, agregado al crédito. ` : '') +
+          `Nuevo saldo del crédito: ${fmtMoney(Number(data.nuevoSaldo))}.${cierre}` +
+          (Number(data.aFavorCliente) > 0 ? ` Devolver al cliente ${fmtMoney(Number(data.aFavorCliente))}.` : '') +
+          quienFirmo(data),
         );
       }
 
@@ -286,6 +312,7 @@ export function Devoluciones() {
       );
 
       setObs('');
+      setLleva([]);
       setShowConfirm(false);
       setPasswordVendedor('');
       setShowExito(true);
@@ -309,6 +336,7 @@ export function Devoluciones() {
     setErrorDoc('');
     setErrorProceso('');
     setObs('');
+    setLleva([]);
   };
 
   return(
@@ -322,7 +350,7 @@ export function Devoluciones() {
                   <i className="ti ti-arrow-back-up" style={{ color: BRAND.red, fontSize: 20 }} />
                 </div>
                 <div style={{ fontSize: 17, fontWeight: 800, color: BRAND.black }}>
-                  Confirmar devolución
+                  {lleva.length ? 'Confirmar cambio de producto' : 'Confirmar devolución'}
                 </div>
               </div>
               <div style={{ fontSize: 14, color: BRAND.gray600, lineHeight: 1.6 }}>
@@ -343,9 +371,26 @@ export function Devoluciones() {
                 </div>
               ))}
               <div style={{ borderTop: `1px solid ${BRAND.gray200}`, marginTop: 6, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 15 }}>
-                <span>Total a reembolsar</span>
+                <span>{lleva.length ? 'Total devuelto' : 'Total a reembolsar'}</span>
                 <span style={{ color: '#1a7a40' }}>{fmtMoney(totalDevolver)}</span>
               </div>
+              {lleva.length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray600, marginTop: 8 }}>SE LLEVA</div>
+                  {lleva.map((it) => (
+                    <div key={it.idFab} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ fontWeight: 600 }}>{it.descPro}<span style={{ fontWeight: 400, color: BRAND.gray600 }}> × {it.cantidad}</span></span>
+                      <span style={{ fontWeight: 700 }}>{fmtMoney(it.cantidad * it.precio)}</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: `1px solid ${BRAND.gray200}`, marginTop: 6, paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 15 }}>
+                    <span>{doc?.tipo === 'CREDITO' ? 'Cambio en el saldo' : diferencia >= 0 ? 'El cliente paga' : 'Devolver al cliente'}</span>
+                    <span style={{ color: diferencia > 0 ? BRAND.red : '#1a7a40' }}>
+                      {doc?.tipo === 'CREDITO' ? `${diferencia >= 0 ? '+' : '−'}${fmtMoney(Math.abs(diferencia))}` : fmtMoney(Math.abs(diferencia))}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             <form
@@ -507,11 +552,15 @@ export function Devoluciones() {
                       <tr key={d.idGrupo}>
                         <td style={{ ...S.td, whiteSpace: 'nowrap' }}>{d.fecha.split('-').reverse().join('/')} {d.hora}</td>
                         <td style={S.td}>
-                          {d.items.filter((it) => it.movimiento === 'DEVUELVE').map((it) => (
-                            <div key={`${d.idGrupo}-${it.idFab}`} style={{ fontSize: 12 }}>
+                          {d.items.map((it) => (
+                            <div key={`${d.idGrupo}-${it.movimiento}-${it.idFab}`} style={{ fontSize: 12 }}>
+                              {it.movimiento === 'LLEVA' ? '↗ Se lleva: ' : '↩ '}
                               {it.descPro ?? it.codFab} × {it.cantidad}
                             </div>
                           ))}
+                          {d.codVentaCambio && (
+                            <div style={{ fontSize: 11, color: BRAND.gray600 }}>Venta del cambio: {d.codVentaCambio}</div>
+                          )}
                         </td>
                         <td style={S.td}>{d.items[0]?.nomSuc ?? '—'}</td>
                         <td style={S.td}>{d.registra.nombre || d.registra.codUsu}</td>
@@ -627,6 +676,8 @@ export function Devoluciones() {
                   </div>
                 </div>
 
+                <CambioProducto items={lleva} onChange={setLleva} disabled={procesando} />
+
                 <div style={S.formGroup}>
                   <label style={S.label}>Observación (opcional)</label>
                   <textarea
@@ -639,10 +690,18 @@ export function Devoluciones() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button style={btnStyle('primary')} onClick={abrirConfirm} disabled={procesando || itemsSeleccionados.length === 0}>
-                    <i className={`ti ${procesando ? 'ti-loader-2' : 'ti-arrow-back-up'}`} />
-                    {procesando ? 'Procesando…' : 'Registrar devolución'}
+                  <button style={btnStyle('primary')} onClick={abrirConfirm} disabled={procesando || itemsSeleccionados.length === 0 || llevaInvalido}>
+                    <i className={`ti ${procesando ? 'ti-loader-2' : lleva.length ? 'ti-arrows-exchange' : 'ti-arrow-back-up'}`} />
+                    {procesando ? 'Procesando…' : lleva.length ? 'Registrar cambio' : 'Registrar devolución'}
                   </button>
+                  {lleva.length > 0 && itemsSeleccionados.length > 0 && (
+                    <span style={{ fontSize: 13, fontWeight: 700, color: diferencia > 0 ? BRAND.red : '#1a7a40' }}>
+                      {doc.tipo === 'CREDITO'
+                        ? `Saldo del crédito ${diferencia >= 0 ? '+' : '−'}${fmtMoney(Math.abs(diferencia))}`
+                        : diferencia > 0 ? `El cliente paga ${fmtMoney(diferencia)}`
+                        : diferencia < 0 ? `Devolver al cliente ${fmtMoney(-diferencia)}` : 'Sin diferencia'}
+                    </span>
+                  )}
                   {itemsSeleccionados.length === 0 && (
                     <span style={{ fontSize: 12, color: BRAND.gray600 }}>Selecciona al menos un producto para devolver.</span>
                   )}
