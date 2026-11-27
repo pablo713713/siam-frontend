@@ -50,7 +50,6 @@ export function TipoCambio() {
     try {
       const { data } = await api.post('/ventas/dolar-paralelo', {
         tipo_cambio: valor,
-        cod_usu: usuario?.cod_usu,
         cod_emp: usuario?.cod_emp ?? '001',
       });
       flash(data.message);

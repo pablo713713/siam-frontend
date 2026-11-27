@@ -233,7 +233,6 @@ export function MovimientosAlmacen() {
         '/productos/actualizar-mercaderia',
         {
           cod_suc: almacenDestino,
-          cod_usu: usuario.cod_usu,
           obs: observacion.trim() || undefined,
           items: payloadItems(),
         } satisfies IngresoMercaderiaRequest,

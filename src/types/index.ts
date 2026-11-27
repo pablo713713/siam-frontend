@@ -205,7 +205,6 @@ export interface ItemMovimientoMercaderia {
 
 export interface IngresoMercaderiaRequest {
   cod_suc: string;
-  cod_usu: string;
   obs?: string;
   items: ItemMovimientoMercaderia[];
 }

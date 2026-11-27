@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { BRAND, S, btnStyle } from '../components/ui/tokens';
 import type { ClienteVenta, Producto } from '../types';
@@ -39,7 +38,6 @@ interface ItemCarrito {
 }
 
 export function NuevaVenta() {
-  const { usuario } = useAuth();
 
   const [clienteSel, setClienteSel] = useState<ClienteVenta | null>(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_CLI) ?? 'null'); } catch { return null; }
@@ -234,7 +232,6 @@ export function NuevaVenta() {
     setLoading(true);
     try {
       const { data } = await api.post('/ventas', {
-        cod_usu: usuario?.cod_usu,
         cod_cli: clienteSel.codCli,
         cod_suc: COD_SUC_MOTORZONE,
         factura: false,

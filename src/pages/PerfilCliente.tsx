@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 import type {
   ClientePerfil,
@@ -100,6 +101,8 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 // ── Página ────────────────────────────────────────────────────────────────────
 export function PerfilCliente() {
   const navigate = useNavigate();
+  // Solo el Administrador cambia la configuración del cliente (la API lo exige)
+  const esAdmin = useAuth().usuario?.roles?.includes('Administrador') ?? false;
 
   // ── Buscador por nombre/CI ──
   const [query, setQuery] = useState('');
@@ -405,6 +408,7 @@ export function PerfilCliente() {
           </div>
 
           {/* ── Configuraciones del cliente ── */}
+          {esAdmin && (
           <div style={S.card}>
             <div style={{ ...S.cardTitle, display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="ti ti-settings" style={{ color: BRAND.red, fontSize: 15 }} />
@@ -427,6 +431,7 @@ export function PerfilCliente() {
               )}
             </div>
           </div>
+          )}
 
           {/* ── Historial de Compras ── */}
           <div style={S.card}>

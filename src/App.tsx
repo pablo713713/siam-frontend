@@ -59,17 +59,16 @@ export default function App() {
           <Route path="/clientes" element={<PrivateRoute><MainLayout><PerfilCliente /></MainLayout></PrivateRoute>} />
 
           {/* Ventas */}
-          <Route path="/ventas/nueva" element={<PrivateRoute><MainLayout><NuevaVenta /></MainLayout></PrivateRoute>} />
-          <Route path="/ventas/confirmar" element={<RoleRoute role="Vendedor"><MainLayout><ConfirmarVenta /></MainLayout></RoleRoute>} />
+          <Route path="/ventas/nueva" element={<RoleRoute role={['Vendedor', 'Administrador']}><MainLayout><NuevaVenta /></MainLayout></RoleRoute>} />
+          <Route path="/ventas/confirmar" element={<RoleRoute role={['Vendedor', 'Administrador']}><MainLayout><ConfirmarVenta /></MainLayout></RoleRoute>} />
           <Route path="/ventas" element={<RoleRoute role="Administrador"><MainLayout><VentasRealizadas /></MainLayout></RoleRoute>} />
-          <Route path="/creditos" element={<PrivateRoute><MainLayout><Creditos /></MainLayout></PrivateRoute>} />
+          <Route path="/creditos" element={<RoleRoute role={['Vendedor', 'Administrador']}><MainLayout><Creditos /></MainLayout></RoleRoute>} />
+          <Route path="/creditos/abiertos" element={<RoleRoute role={['Vendedor', 'Administrador']}><MainLayout><CreditosAbiertos /></MainLayout></RoleRoute>} />
 
           {/* Devoluciones */}
-          <Route path="/devoluciones" element={<PrivateRoute><MainLayout><Devoluciones /></MainLayout></PrivateRoute>} />
+          <Route path="/devoluciones" element={<RoleRoute role="Administrador"><MainLayout><Devoluciones /></MainLayout></RoleRoute>} />
 
           <Route path="*" element={<DefaultRedirect />} />
-
-          <Route path="/creditos/abiertos" element={<PrivateRoute><MainLayout><CreditosAbiertos /></MainLayout></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
