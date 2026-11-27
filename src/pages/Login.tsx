@@ -21,8 +21,12 @@ export function Login() {
       const { data } = await api.post<AuthResponse>('/auth/login', { alias, contrasena });
       login(data.access_token, data.usuario);
       navigate('/dashboard', { replace: true });
-    } catch {
-      setError('Alias o contrasena incorrectos.');
+    } catch (err) {
+      // 429: alias bloqueado temporalmente tras 5 intentos fallidos
+      const resp = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      setError(resp?.status === 429
+        ? (resp.data?.message ?? 'Demasiados intentos fallidos. Intente más tarde.')
+        : 'Alias o contraseña incorrectos.');
     } finally {
       setLoading(false);
     }

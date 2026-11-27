@@ -3,7 +3,6 @@ import api from '../api/axios';
 import type { AlertaCredito, ClienteCredito, CreditoActivo, CreditoClienteResponse, PagoMultipleResponse } from '../types';
 import css from './Creditos.module.css';
 import { NuevoCreditoModal } from './NuevoCreditoModal';
-import { useAuth } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 
 const money = (value: number) => new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(value);
@@ -17,7 +16,6 @@ const clientName = (client: Pick<ClienteCredito, 'nomCliente' | 'apeCliente' | '
 const alertaLabel: Record<AlertaCredito, string> = { ok: 'En plazo', proximo: 'Próximo a vencer', vencido: 'Vencido' };
 
 export function Creditos() {
-  const { usuario } = useAuth();
   const [searchParams] = useSearchParams();
   const [activos, setActivos] = useState<CreditoActivo[]>([]);
   const [clientes, setClientes] = useState<ClienteCredito[]>([]);
@@ -87,7 +85,6 @@ export function Creditos() {
     {mostrarModal && (
       <NuevoCreditoModal
         clientesHabilitados={clientes}
-        codUsu={usuario?.cod_usu ?? ''}
         onClose={() => setMostrarModal(false)}
         onCreated={() => void cargar()}
       />

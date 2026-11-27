@@ -26,10 +26,9 @@ interface Props {
   clientesHabilitados: ClienteCredito[];
   onClose: () => void;
   onCreated: () => void;
-  codUsu: string;
 }
 
-export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, codUsu }: Props) {
+export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated }: Props) {
   const [clienteSel, setClienteSel] = useState<ClienteCredito | null>(null);
   const [buscarCli, setBuscarCli] = useState('');
   const [carrito, setCarrito] = useState<ItemCarritoCredito[]>([]);
@@ -136,7 +135,6 @@ export function NuevoCreditoModal({ clientesHabilitados, onClose, onCreated, cod
     setLoading(true);
     try {
       const { data } = await api.post('/creditos', {
-        cod_usu: codUsu,
         cod_cli: clienteSel.codCli,
         cod_suc: COD_SUC_MOTORZONE,
         semanasPlazo,

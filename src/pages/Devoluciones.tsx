@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { BRAND, S, btnStyle, badgeStyle } from '../components/ui/tokens';
 
@@ -69,7 +68,6 @@ const modalStyle: React.CSSProperties = {
 };
 
 export function Devoluciones() {
-  const { usuario } = useAuth();
 
   const [codInput, setCodInput] = useState('');
   const [doc, setDoc] = useState<Documento | null>(null);
@@ -205,7 +203,6 @@ export function Devoluciones() {
       if (doc.tipo === 'VENTA') {
         await api.post('/devoluciones', {
           cod_venta: doc.codigo,
-          cod_usu: usuario?.cod_usu ?? '0000001',
           obs: obs.trim() || undefined,
           items: itemsSeleccionados.map(it => ({
             id_fab: it.idFab,
