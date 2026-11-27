@@ -19,8 +19,8 @@ interface RespuestaDevolucion {
 
 /**
  * Devolución al almacén de origen de lo que el vendedor no vendió.
- * La registra y firma con su contraseña quien recibe la mercadería de vuelta
- * (el encargado del almacén de origen o un Administrador).
+ * Doble firma: quien recibe la mercadería (encargado del almacén de origen o
+ * Administrador) y el vendedor que se la llevó, cada uno con su contraseña.
  */
 export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRegistrada }: Props) {
   const pendientes = traspaso.items.filter((it) => (it.pendiente ?? 0) > 0);
@@ -29,6 +29,7 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
     () => Object.fromEntries(pendientes.map((it) => [it.idFab, String(it.pendiente)])),
   );
   const [password, setPassword] = useState('');
+  const [passwordVendedor, setPasswordVendedor] = useState('');
   const [obs, setObs] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -53,6 +54,7 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
         `/productos/traspasos/${traspaso.idAutorizacion}/devolucion`,
         {
           password_firma: password,
+          password_vendedor: passwordVendedor,
           items: items.map((x) => ({ id_fab: x.it.idFab, cantidad: x.cantidad })),
           ...(obs.trim() ? { obs: obs.trim() } : {}),
         },
@@ -122,6 +124,20 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
             onChange={(e) => setObs(e.target.value)} />
         </div>
 
+        <div style={{ ...S.formGroup, padding: 12, border: `1px solid ${BRAND.gray200}`, borderRadius: 8 }}>
+          <label htmlFor="dv-password-vendedor" style={S.label}>
+            Contraseña del vendedor · {traspaso.nombreFirmante}
+          </label>
+          <input
+            id="dv-password-vendedor" type="password" autoComplete="new-password"
+            style={S.input} value={passwordVendedor} disabled={enviando}
+            onChange={(e) => setPasswordVendedor(e.target.value)}
+          />
+          <p style={{ fontSize: 11, color: BRAND.gray600, margin: '4px 0 0' }}>
+            El vendedor que se llevó los productos confirma que los está devolviendo.
+          </p>
+        </div>
+
         <div style={S.formGroup}>
           <label htmlFor="dv-password" style={S.label}>Tu contraseña</label>
           <input
@@ -136,7 +152,7 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button type="button" style={btnStyle('ghost')} onClick={onClose} disabled={enviando}>Cancelar</button>
-          <button type="submit" style={btnStyle('primary')} disabled={enviando || !password || total === 0 || invalido}>
+          <button type="submit" style={btnStyle('primary')} disabled={enviando || !password || !passwordVendedor || total === 0 || invalido}>
             <i className="ti ti-signature" aria-hidden="true" />
             {enviando ? 'Registrando…' : `Firmar y devolver ${total} unidad${total === 1 ? '' : 'es'}`}
           </button>
