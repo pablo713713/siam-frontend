@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { Modal } from '../ui/Modal';
-import { BRAND, S, badgeStyle } from '../ui/tokens';
+import { BRAND, S, badgeStyle, btnStyle } from '../ui/tokens';
 import { mensajeError } from '../../utils/errores';
 import type { EncargadosAlmacen } from '../../types';
 
@@ -48,6 +48,11 @@ export function EncargadosModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       )}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+        <button type="button" style={btnStyle('secondary')} onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
     </Modal>
   );
 }

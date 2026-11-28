@@ -18,15 +18,16 @@ interface RespuestaDevolucion {
 }
 
 /**
- * Devolución al almacén de origen de lo que el vendedor no vendió.
+ * Devolución al almacén de origen de productos de una salida: el vendedor
+ * regresa lo que se llevó (todo → Devuelto, una parte → Devuelto parcialmente).
  * Doble firma: quien recibe la mercadería (encargado del almacén de origen o
  * Administrador) y el vendedor que se la llevó, cada uno con su contraseña.
  */
 export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRegistrada }: Props) {
-  const pendientes = traspaso.items.filter((it) => (it.pendiente ?? 0) > 0);
-  // Por defecto se devuelve todo lo pendiente
+  const pendientes = traspaso.items.filter((it) => (it.porDevolver ?? 0) > 0);
+  // Por defecto se devuelve todo lo que queda; se puede bajar para una devolución parcial
   const [cantidades, setCantidades] = useState<Record<number, string>>(
-    () => Object.fromEntries(pendientes.map((it) => [it.idFab, String(it.pendiente)])),
+    () => Object.fromEntries(pendientes.map((it) => [it.idFab, String(it.porDevolver)])),
   );
   const [password, setPassword] = useState('');
   const [passwordVendedor, setPasswordVendedor] = useState('');
@@ -40,12 +41,12 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
   const total = items.reduce((s, x) => s + x.cantidad, 0);
   const invalido = pendientes.some((it) => {
     const n = Number(cantidades[it.idFab] || 0);
-    return !Number.isInteger(n) || n < 0 || n > (it.pendiente ?? 0);
+    return !Number.isInteger(n) || n < 0 || n > (it.porDevolver ?? 0);
   });
 
   const registrar = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (invalido) { setError('Revisa las cantidades: no pueden superar lo pendiente.'); return; }
+    if (invalido) { setError('Revisa las cantidades: no pueden superar lo que queda por devolver.'); return; }
     if (total === 0) { setError('Indica al menos una unidad a devolver.'); return; }
     setError('');
     setEnviando(true);
@@ -80,7 +81,7 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
       etiqueta={<span style={badgeStyle('gray')}>{traspaso.nomSucDes} → {traspaso.nomSucOri}</span>}
     >
       <p style={{ fontSize: 12, color: BRAND.gray600, margin: '0 0 12px' }}>
-        Lo que <strong style={{ color: BRAND.gray700 }}>{traspaso.nombreFirmante}</strong> se llevó y no vendió
+        Lo que <strong style={{ color: BRAND.gray700 }}>{traspaso.nombreFirmante}</strong> se llevó y está devolviendo
         vuelve a <strong style={{ color: BRAND.gray700 }}>{traspaso.nomSucOri}</strong>. Traspaso N° {traspaso.codRemSalida}.
       </p>
       {error && <div style={S.errorBanner} role="alert">{error}</div>}
@@ -91,7 +92,7 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
             <thead>
               <tr>
                 <th style={S.th}>Producto</th>
-                <th style={{ ...S.th, textAlign: 'right' }}>Pendiente</th>
+                <th style={{ ...S.th, textAlign: 'right' }}>Puede devolver</th>
                 <th style={{ ...S.th, width: 120 }}>Devuelve</th>
               </tr>
             </thead>
@@ -102,10 +103,10 @@ export function DevolucionTraspasoModal({ traspaso, nombreUsuario, onClose, onRe
                     <div style={{ fontWeight: 600 }}>{it.descPro ?? '—'}</div>
                     <div style={{ fontSize: 11, color: BRAND.gray600 }}>{it.codFab}</div>
                   </td>
-                  <td style={{ ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{it.pendiente}</td>
+                  <td style={{ ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{it.porDevolver}</td>
                   <td style={S.td}>
                     <input
-                      type="number" min={0} max={it.pendiente ?? 0} step={1}
+                      type="number" min={0} max={it.porDevolver ?? 0} step={1}
                       style={S.input} disabled={enviando}
                       value={cantidades[it.idFab] ?? ''}
                       onChange={(e) => setCantidades({ ...cantidades, [it.idFab]: e.target.value })}

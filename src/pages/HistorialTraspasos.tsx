@@ -44,9 +44,8 @@ const COLOR_TIPO: Record<TipoTraspaso, 'amber' | 'blue' | 'gray'> = {
 };
 
 const COLOR_ESTADO: Record<EstadoTraspaso, 'amber' | 'green' | 'gray' | 'blue'> = {
-  PENDIENTE: 'amber',
   COMPLETADO: 'green',
-  VENDIDO: 'green',
+  PARCIAL: 'amber',
   DEVUELTO: 'gray',
 };
 
@@ -180,13 +179,7 @@ export function HistorialTraspasos() {
     }
   };
 
-  // "Vendido" puede incluir una parte devuelta: se aclara en la etiqueta
-  const textoEstado = (t: TraspasoHistorial) => {
-    const base = ESTADO_TRASPASO_TEXTO[t.estado] ?? t.estado;
-    return t.estado === 'VENDIDO' && t.items.some((it) => (it.devuelta ?? 0) > 0)
-      ? `${base} (con devolución)`
-      : base;
-  };
+  const textoEstado = (t: TraspasoHistorial) => ESTADO_TRASPASO_TEXTO[t.estado] ?? t.estado;
 
   const traspasos = resultado?.data ?? [];
   const meta = resultado?.meta;
@@ -195,10 +188,10 @@ export function HistorialTraspasos() {
     <div>
       <header style={S.pageHeader}>
         <div>
-          <h1 style={S.pageTitle}>Historial de traspasos</h1>
+          <h1 style={S.pageTitle}>{alcance === 'MIS_ALMACENES' ? 'Historial de salidas' : 'Historial de traspasos'}</h1>
           <p style={S.pageSubtitle}>
             Traspasos firmados digitalmente: quién registró, quién firmó, cuándo y qué productos.
-            {alcance === 'MIS_ALMACENES' && ' Ves solo los traspasos que salieron de tus almacenes.'}
+            {alcance === 'MIS_ALMACENES' && ' Ves solo los movimientos que tú registraste y las devoluciones de tus salidas.'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -343,8 +336,8 @@ export function HistorialTraspasos() {
                               <span>Firmó: <strong style={{ color: BRAND.black }}>{t.nombreFirmante}</strong> ({t.codUsuFirmante})</span>
                             </div>
                             {(() => {
-                              // En salidas a venta se muestra cuánto se vendió, se devolvió y falta
-                              const conSeguimiento = t.items.some((it) => it.pendiente !== null);
+                              // En las salidas se muestra cuánto se llevó y cuánto devolvió
+                              const conSeguimiento = t.items.some((it) => it.devuelta !== null);
                               const num: React.CSSProperties = { ...S.td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
                               return (
                                 <table style={{ ...S.table, background: BRAND.white, border: `1px solid ${BRAND.gray200}` }}>
@@ -354,9 +347,7 @@ export function HistorialTraspasos() {
                                       <th style={S.th}>Producto</th>
                                       <th style={S.th}>Observación</th>
                                       <th style={{ ...S.th, textAlign: 'right' }}>{conSeguimiento ? 'Se llevó' : 'Cantidad'}</th>
-                                      {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Vendió</th>}
                                       {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Devolvió</th>}
-                                      {conSeguimiento && <th style={{ ...S.th, textAlign: 'right' }}>Pendiente</th>}
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -366,11 +357,9 @@ export function HistorialTraspasos() {
                                         <td style={S.td}>{it.descPro ?? '—'}</td>
                                         <td style={{ ...S.td, color: BRAND.gray600 }}>{it.obs ?? ''}</td>
                                         <td style={{ ...num, fontWeight: 700 }}>{it.cantidad}</td>
-                                        {conSeguimiento && <td style={num}>{it.vendida ?? '—'}</td>}
-                                        {conSeguimiento && <td style={num}>{it.devuelta ?? '—'}</td>}
                                         {conSeguimiento && (
-                                          <td style={{ ...num, fontWeight: 700, color: (it.pendiente ?? 0) > 0 ? BRAND.amber : BRAND.gray400 }}>
-                                            {it.pendiente ?? '—'}
+                                          <td style={{ ...num, fontWeight: 700, color: (it.devuelta ?? 0) > 0 ? BRAND.amber : BRAND.gray400 }}>
+                                            {it.devuelta ?? '—'}
                                           </td>
                                         )}
                                       </tr>
@@ -379,20 +368,9 @@ export function HistorialTraspasos() {
                                 </table>
                               );
                             })()}
-                            {t.documentos.length > 0 && (
-                              <p style={{ fontSize: 12, color: BRAND.gray600, margin: '10px 0 0' }}>
-                                Salió en:{' '}
-                                {t.documentos.map((d, i) => (
-                                  <span key={`${d.tipoDoc}-${d.codDoc}`} style={{ color: BRAND.black }}>
-                                    {i > 0 && ', '}
-                                    {d.tipoDoc === 'CREDITO' ? 'crédito' : 'venta'} <strong>{d.codDoc}</strong> ({d.cantidad} unid.)
-                                  </span>
-                                ))}
-                              </p>
-                            )}
                             {t.tipo === 'DEVOLUCION' && (
                               <p style={{ fontSize: 12, color: BRAND.gray600, margin: '10px 0 0' }}>
-                                Devolución de una salida a venta: la mercadería volvió a {t.nomSucDes}.
+                                Devolución de una salida: la mercadería volvió a {t.nomSucDes}.
                               </p>
                             )}
                             {t.puedeDevolver && (
@@ -402,7 +380,7 @@ export function HistorialTraspasos() {
                                   Registrar devolución
                                 </button>
                                 <span style={{ fontSize: 12, color: BRAND.gray600 }}>
-                                  Lo que no se vendió vuelve a {t.nomSucOri}.
+                                  El vendedor regresa productos a {t.nomSucOri}: todo → Devuelto, una parte → Devuelto parcialmente. Firman ambos.
                                 </span>
                               </div>
                             )}

@@ -59,7 +59,7 @@ const calcularTipoTraspaso = (
 
 const ETIQUETA_TIPO: Record<TipoTraspaso, { texto: string; ayuda: string; color: 'amber' | 'blue' | 'gray' }> = {
   SALIDA_VENTA: {
-    texto: 'Salida a venta',
+    texto: 'Salida',
     ayuda: 'Doble firma: primero tú (encargado) y luego el vendedor que se lleva los productos.',
     color: 'amber',
   },

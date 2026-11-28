@@ -9,7 +9,7 @@ interface Props {
   destino: string;
   totalProductos: number;
   totalUnidades: number;
-  /** Nombre del usuario que registra (firma él mismo cuando no es salida a venta) */
+  /** Nombre del usuario que registra (firma él mismo cuando no es una salida) */
   nombreEncargado: string;
   enviando: boolean;
   error: string;
@@ -18,14 +18,14 @@ interface Props {
 }
 
 const TITULO_TIPO: Record<TipoTraspaso, string> = {
-  SALIDA_VENTA: 'Salida a venta',
+  SALIDA_VENTA: 'Salida',
   INGRESO_TIENDA: 'Ingreso a tienda',
   ENTRE_ALMACENES: 'Traspaso entre almacenes',
 };
 
 /**
  * Firma digital de un traspaso (reemplaza el talonario físico).
- *  - Salida a venta (a MOTOR ZONE), en dos pasos:
+ *  - Salida (a MOTOR ZONE), en dos pasos:
  *      1. el encargado que entrega confirma con su contraseña;
  *      2. el vendedor que se lleva los productos elige su usuario y firma.
  *  - Otros traspasos: el encargado que registra confirma con su contraseña.
@@ -41,7 +41,7 @@ export function FirmaTraspasoModal({
   const [errorCarga, setErrorCarga] = useState('');
   const [codVendedor, setCodVendedor] = useState('');
   const [password, setPassword] = useState('');
-  // Salida a venta: paso 1 (encargado) → paso 2 (vendedor)
+  // Salida: paso 1 (encargado) → paso 2 (vendedor)
   const [paso, setPaso] = useState<1 | 2>(1);
   const [passwordEncargado, setPasswordEncargado] = useState('');
   const [verificando, setVerificando] = useState(false);
