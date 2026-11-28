@@ -222,8 +222,8 @@ export interface TraspasoAlmacenRequest {
   cod_suc_des: string;
   // El encargado que registra se toma del token en el backend
   password_firma: string;
-  password_encargado?: string; // salida a venta, paso 1: firma del encargado
-  cod_usu_vendedor?: string;   // salida a venta, paso 2: vendedor que se lleva los productos
+  password_encargado?: string; // salida, paso 1: firma del encargado
+  cod_usu_vendedor?: string;   // salida, paso 2: vendedor que se lleva los productos
   reposicion?: boolean;        // hacia MOTOR ZONE sin vendedor
   obs?: string;
   items: ItemMovimientoMercaderia[];
@@ -246,16 +246,17 @@ export interface VendedorFirma {
 
 export interface FirmaTraspaso {
   idAutorizacion: number | null;
-  // Salida a venta: encargado que entregó (paso 1) y vendedor que se llevó (paso 2)
+  // Salida: encargado que entregó (paso 1) y vendedor que se llevó (paso 2)
   encargado?: { codUsu: string; alias: string; nombre: string } | null;
   firmante: { codUsu: string; alias: string; nombre: string };
   fechaBolivia: string | null;
   horaBolivia: string | null;
-  estado: 'PENDIENTE' | 'COMPLETADO' | 'VENDIDO' | 'DEVUELTO';
+  estado: EstadoTraspaso;
 }
 
 // ─── Historial de traspasos firmados (talonario digital) ───────────────────
-export type EstadoTraspaso = 'PENDIENTE' | 'COMPLETADO' | 'VENDIDO' | 'DEVUELTO';
+// Salidas: COMPLETADO → PARCIAL (devolvió una parte) | DEVUELTO (devolvió todo)
+export type EstadoTraspaso = 'COMPLETADO' | 'PARCIAL' | 'DEVUELTO';
 
 export interface ItemTraspasoHistorial {
   idFab: number;
@@ -263,16 +264,9 @@ export interface ItemTraspasoHistorial {
   descPro: string | null;
   cantidad: number;
   obs: string | null;
-  // Solo en salidas a venta con seguimiento; en los demás traspasos, null
-  vendida: number | null;
+  // Solo en salidas con detalle; en los demás traspasos, null
   devuelta: number | null;
-  pendiente: number | null;
-}
-
-export interface DocumentoTraspaso {
-  tipoDoc: 'VENTA' | 'CREDITO';
-  codDoc: string;
-  cantidad: number;
+  porDevolver: number | null;
 }
 
 export interface TraspasoHistorial {
@@ -296,7 +290,6 @@ export interface TraspasoHistorial {
   items: ItemTraspasoHistorial[];
   idTaOrigen: number | null;      // en una devolución: el traspaso que se devolvió
   codVenta: string | null;
-  documentos: DocumentoTraspaso[]; // ventas o créditos en que salió el producto
   puedeDevolver: boolean;          // el usuario puede registrar la devolución
 }
 

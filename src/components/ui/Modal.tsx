@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { BRAND, S } from './tokens';
 
 interface Props {
@@ -12,6 +12,14 @@ interface Props {
 
 /** Panel flotante centrado, compartido por los formularios y confirmaciones. */
 export function Modal({ titulo, icono, ancho = 480, onClose, children, etiqueta }: Props) {
+  // Escape cierra la ventana (si se puede cerrar)
+  useEffect(() => {
+    if (!onClose) return;
+    const alPresionar = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', alPresionar);
+    return () => window.removeEventListener('keydown', alPresionar);
+  }, [onClose]);
+
   return (
     <div
       style={{

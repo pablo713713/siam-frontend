@@ -9,6 +9,7 @@ interface NavItem {
   section?: string;
   requiredRole?: string;
   anyRole?: string[]; // visible si el usuario tiene al menos uno de estos roles
+  labelSinAdmin?: string; // texto para quien no es Administrador
 }
 
 const NAV: NavItem[] = [
@@ -22,7 +23,7 @@ const NAV: NavItem[] = [
   { icon: 'ti-search',           label: 'Busqueda Avanzada', to: '/busqueda'      },
   { icon: 'ti-list',             label: 'Kardex',            to: '/kardex'        },
   { icon: 'ti-transfer',         label: 'Movimientos de almacén', to: '/productos/movimientos' },
-  { icon: 'ti-history',          label: 'Historial de traspasos', to: '/productos/traspasos', anyRole: ['Administrador', 'Encargado de Almacen'] },
+  { icon: 'ti-history',          label: 'Historial de traspasos', labelSinAdmin: 'Historial de salidas', to: '/productos/traspasos', anyRole: ['Administrador', 'Encargado de Almacen'] },
   { icon: 'ti-file-pencil',      label: 'Historial de productos', to: '/productos/historial', requiredRole: 'Administrador' },
   { section: 'Clientes' },
   { icon: 'ti-users',            label: 'Gestion de Clientes', to: '/clientes'    },
@@ -85,7 +86,7 @@ export function Sidebar() {
               className={`${css.navItem} ${active ? css.navItemActive : ''}`}
             >
               <i className={`ti ${item.icon} ${css.navIcon}`} aria-hidden="true" />
-              {item.label}
+              {item.labelSinAdmin && !usuario?.roles?.includes('Administrador') ? item.labelSinAdmin : item.label}
             </div>
           );
         })}

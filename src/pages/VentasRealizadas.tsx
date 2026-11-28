@@ -304,24 +304,20 @@ function DetalleDrawer({ codVenta, onClose }: { codVenta: string; onClose: () =>
     if (!detalle) return;
     if (!window.confirm(
       `¿Anular la venta ${detalle.codVenta}?\n\n` +
-      'Los productos vuelven al stock: lo que salió de un traspaso regresa a su almacén de origen y el resto a MOTOR ZONE.',
+      'Los productos vuelven al stock de MOTOR ZONE.',
     )) return;
     
     setAnulando(true);
     setMsgAnular('');
     try {
-      const { data } = await api.put<{
-        unidadesMotorZone: number;
-        devueltoAOrigen: { almacen: string; unidades: number }[];
-      }>(`/ventas/${detalle.codVenta}/anular`);
+      const { data } = await api.put<{ unidadesMotorZone: number }>(`/ventas/${detalle.codVenta}/anular`);
 
       setDetalle({ ...detalle, estado: 'A' });
-      // Indica a dónde volvió cada parte del stock
-      const partes = [
-        data.unidadesMotorZone > 0 ? `${data.unidadesMotorZone} unid. a MOTOR ZONE` : '',
-        ...data.devueltoAOrigen.map((d) => `${d.unidades} unid. al almacén ${d.almacen}`),
-      ].filter(Boolean);
-      setMsgAnular(`Venta anulada correctamente. Stock devuelto: ${partes.join(', ') || 'sin unidades pendientes'}.`);
+      setMsgAnular(
+        data.unidadesMotorZone > 0
+          ? `Venta anulada correctamente. ${data.unidadesMotorZone} unid. volvieron a MOTOR ZONE.`
+          : 'Venta anulada correctamente.',
+      );
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
         setMsgAnular(e.response?.data?.message ?? 'Error al anular la venta.');

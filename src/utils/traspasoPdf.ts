@@ -3,16 +3,15 @@ import type { EstadoTraspaso, TipoTraspaso, TraspasoHistorial } from '../types';
 
 // Textos compartidos con la pantalla de historial
 export const TIPO_TRASPASO_TEXTO: Record<TipoTraspaso, string> = {
-  SALIDA_VENTA: 'Salida a venta',
+  SALIDA_VENTA: 'Salida',
   INGRESO_TIENDA: 'Ingreso a tienda',
   ENTRE_ALMACENES: 'Entre almacenes',
   DEVOLUCION: 'Devolución a almacén',
 };
 
 export const ESTADO_TRASPASO_TEXTO: Record<EstadoTraspaso, string> = {
-  PENDIENTE: 'Pendiente de venta',
   COMPLETADO: 'Completado',
-  VENDIDO: 'Vendido',
+  PARCIAL: 'Devuelto parcialmente',
   DEVUELTO: 'Devuelto',
 };
 
